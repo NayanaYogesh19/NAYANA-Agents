@@ -1,0 +1,31 @@
+# Credentials & secrets
+ga4/token.json
+credentials.json
+token.json
+.env
+.env.*
+!example.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Build files
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
