@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Reach Engagement Analytics Agent
+    </title>
+
+<link rel="stylesheet"
+      href="/static/style.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>
+            Reach Engagement Analytics Agent
+        </h1>
+
+        <div class="form-container">
+
+            <input
+                type="text"
+                id="instagram"
+                placeholder="Instagram URL">
+
+            <input
+                type="text"
+                id="facebook"
+                placeholder="Facebook URL">
+
+            <input
+                type="text"
+                id="linkedin"
+                placeholder="LinkedIn Company URL">
+
+            <input
+                type="text"
+                id="youtube"
+                placeholder="YouTube Channel URL">
+
+            <button onclick="analyzeProfiles()">
+                Analyze Profiles
+            </button>
+
+        </div>
+
+        <div id="loader"
+             class="loader">
+            Analyzing...
+        </div>
+
+        <div id="results"></div>
+
+    </div>
+
+   <script src="/static/script.js"></script>
+
+</body>
+
+</html>
