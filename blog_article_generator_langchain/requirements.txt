@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+
+langchain==0.1.20
+langchain-community==0.0.38
+
+tavily-python
+reportlab

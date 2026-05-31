@@ -29,3 +29,24 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual env
+venv/
+.venv/
+
+# Secrets
+.env
+.env.*
+credentials.json
+token.json
+
+# Generated
+generated_content.pdf
+
+# IDE
+.vscode/
+.idea/
