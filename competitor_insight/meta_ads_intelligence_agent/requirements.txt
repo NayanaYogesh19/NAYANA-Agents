@@ -1,0 +1,13 @@
+langchain
+langgraph
+langchain-openai
+langchain-community
+playwright
+pydantic
+python-dotenv
+beautifulsoup4
+lxml
+pandas
+streamlit
+selenium
+webdriver-manager
