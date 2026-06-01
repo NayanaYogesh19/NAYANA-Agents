@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Audit Report</title>
+</head>
+
+<body>
+
+    <h1>Tags  tracking  Report</h1>
+
+    <hr>
+
+    <h2>Website</h2>
+    <p>{{ result["website_url"] }}</p>
+
+    <h2>Industry</h2>
+    <p>{{ result["industry_type"] }}</p>
+
+    <hr>
+
+    <h2>Detected Tags</h2>
+
+    <ul>
+
+        {% for tag in result["detected_tags"] %}
+
+            <li>{{ tag }}</li>
+
+        {% endfor %}
+
+    </ul>
+
+    <hr>
+
+    <h2>Detected Events</h2>
+
+    <ul>
+
+        {% for event in result["detected_events"] %}
+
+            <li>{{ event }}</li>
+
+        {% endfor %}
+
+    </ul>
+
+    <hr>
+
+    <h2>Duplicate Tracking</h2>
+
+    <ul>
+
+        {% for dup in result["duplicate_events"] %}
+
+            <li>
+
+                {{ dup["platform"] }}
+                fired
+                {{ dup["count"] }}
+                times
+
+            </li>
+
+        {% endfor %}
+
+    </ul>
+
+    <hr>
+
+    <h2>Missing Events</h2>
+
+    <ul>
+
+        {% for event in result["industry_validation"]["missing_events"] %}
+
+            <li>{{ event }}</li>
+
+        {% endfor %}
+
+    </ul>
+
+</body>
+
+</html>

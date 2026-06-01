@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>
+        Tags  tracking  Agent
+    </title>
+
+</head>
+
+<body>
+
+    <h1>
+        Tracking Tags Hygiene Agent
+    </h1>
+
+    <form action="/audit" method="post">
+
+        <label>
+            Website URL:
+        </label>
+
+        <br><br>
+
+        <input
+            type="text"
+            name="website_url"
+            placeholder="https://example.com"
+            required
+            style="width:400px;"
+        >
+
+        <br><br>
+
+        <label>
+            Industry Type:
+        </label>
+
+        <br><br>
+
+        <select name="industry_type">
+
+            <option value="b2c">
+                B2C
+            </option>
+
+            <option value="b2b">
+                B2B
+            </option>
+
+        </select>
+
+        <br><br>
+
+        <button type="submit">
+            Run Audit
+        </button>
+
+    </form>
+
+</body>
+
+</html>
