@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        FAQ Optimizer Agent
+    </title>
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="/static/styles.css?v=2027"
+    >
+
+    <!-- JSPDF -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- ================================================= -->
+    <!-- HEADER -->
+    <!-- ================================================= -->
+
+    <header>
+
+        <h1>
+            🎯 FAQ Optimizer Agent
+        </h1>
+
+        <p class="subtitle">
+
+            Generate AEO, GEO, SEO optimized FAQs
+            with AI analytics
+
+        </p>
+
+    </header>
+
+    <!-- ================================================= -->
+    <!-- STEP 1 -->
+    <!-- ================================================= -->
+
+    <div
+        id="step1"
+        class="step active"
+    >
+
+        <div class="card">
+
+            <h2>
+                Step 1: Enter Website Details
+            </h2>
+
+            <form id="inputForm">
+
+                <!-- WEBSITE URL -->
+
+                <div class="form-group">
+
+                    <label for="websiteUrl">
+
+                        Website URL *
+
+                    </label>
+
+                    <input
+                        type="url"
+                        id="websiteUrl"
+                        placeholder="https://example.com"
+                        required
+                    >
+
+                </div>
+
+                <!-- FAQ TYPE -->
+
+                <div class="form-group">
+
+                    <label for="faqType">
+
+                        FAQ Type *
+
+                    </label>
+
+                    <select
+                        id="faqType"
+                        required
+                    >
+
+                        <option value="">
+                            Select FAQ Type
+                        </option>
+
+                        <option value="product">
+                            Product-Based FAQs
+                        </option>
+
+                        <option value="application">
+                            Application-Based FAQs
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- TOPIC -->
+
+                <div class="form-group">
+
+                    <label for="topic">
+
+                        Topic *
+
+                    </label>
+
+                    <select
+                        id="topic"
+                        required
+                    >
+
+                        <option value="">
+                            Select Topic
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- GENERATE QUESTIONS -->
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+
+                    🚀 Generate Questions
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ================================================= -->
+    <!-- STEP 2 -->
+    <!-- ================================================= -->
+
+    <div
+        id="step2"
+        class="step"
+    >
+
+        <div class="card">
+
+            <h2>
+                Step 2: Review Questions
+            </h2>
+
+            <p class="info-text">
+
+                Select the best questions
+                for answer generation.
+
+            </p>
+
+            <div id="questionsContainer"></div>
+
+            <div class="button-group">
+
+                <button
+                    class="btn btn-secondary"
+                    id="backBtn"
+                >
+
+                    ⬅ Back
+
+                </button>
+
+                <button
+                    class="btn btn-primary"
+                    id="generateAnswersBtn"
+                >
+
+                    ✨ Generate Answers
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================================================= -->
+    <!-- STEP 3 -->
+    <!-- ================================================= -->
+
+    <div
+        id="step3"
+        class="step"
+    >
+
+        <div class="card">
+
+            <h2>
+                Step 3: Optimized FAQs
+            </h2>
+
+            <div class="results-header">
+
+                <div class="company-info">
+
+                    <h3 id="companyName"></h3>
+
+                    <p id="topicDisplay"></p>
+
+                </div>
+
+                <!-- EXPORT PDF -->
+
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    id="exportPdfBtn"
+                >
+
+                    📄 Export PDF
+
+                </button>
+
+            </div>
+
+            <div id="resultsContainer"></div>
+
+            <div class="button-group">
+
+                <button
+                    class="btn btn-secondary"
+                    id="startOverBtn"
+                >
+
+                    🔄 Start Over
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================================================= -->
+    <!-- LOADING -->
+    <!-- ================================================= -->
+
+    <div
+        id="loadingSpinner"
+        class="loading-overlay"
+    >
+
+        <div class="spinner"></div>
+
+        <p id="loadingText">
+
+            Processing...
+
+        </p>
+
+    </div>
+
+    <!-- ================================================= -->
+    <!-- ERROR -->
+    <!-- ================================================= -->
+
+    <div
+        id="errorMessage"
+        class="error-message"
+    >
+
+        <span class="error-icon">
+
+            ⚠️
+
+        </span>
+
+        <span id="errorText"></span>
+
+        <button
+            class="close-btn"
+            onclick="
+                document
+                .getElementById(
+                    'errorMessage'
+                )
+                .classList.remove(
+                    'active'
+                )
+            "
+        >
+
+            ×
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ================================================= -->
+<!-- APP JS -->
+<!-- ================================================= -->
+
+<script src="/static/scripts/app.js?v=2027"></script>
+
+</body>
+
+</html>

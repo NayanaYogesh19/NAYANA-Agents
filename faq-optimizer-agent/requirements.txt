@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+langchain
+langchain-openai
+langsmith
+beautifulsoup4
+requests
+python-dotenv
+supabase
+jinja2

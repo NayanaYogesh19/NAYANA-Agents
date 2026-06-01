@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FAQ Optimizer Agent</title>
+
+    <style>
+
+        body{
+            font-family: Arial;
+            background:#f4f7fb;
+            margin:0;
+            padding:40px;
+        }
+
+        .container{
+            max-width:1000px;
+            margin:auto;
+            background:white;
+            padding:30px;
+            border-radius:12px;
+            box-shadow:0px 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1{
+            text-align:center;
+            color:#333;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin-top:12px;
+            border:1px solid #ccc;
+            border-radius:6px;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            margin-top:15px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        button:hover{
+            background:#0056b3;
+        }
+
+        .section{
+            margin-top:30px;
+            padding:20px;
+            background:#f8f8f8;
+            border-radius:8px;
+        }
+
+        .question-box{
+            margin-top:10px;
+            padding:10px;
+            background:white;
+            border-radius:6px;
+            border:1px solid #ddd;
+        }
+
+        .faq-box{
+            background:white;
+            padding:15px;
+            margin-top:15px;
+            border-radius:8px;
+            border:1px solid #ddd;
+        }
+
+        .loading{
+            color:#007bff;
+            font-weight:bold;
+        }
+
+        .error{
+            color:red;
+            font-weight:bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>FAQ Optimizer Agent</h1>
+
+    <!-- URL INPUT -->
+    <input
+        type="text"
+        id="url"
+        placeholder="Enter Website URL"
+    >
+
+    <!-- TOPIC INPUT -->
+    <input
+        type="text"
+        id="topic"
+        placeholder="Enter Topic"
+    >
+
+    <!-- PLAN BUTTON -->
+    <button onclick="generatePlan()">
+        Generate Plan
+    </button>
+
+    <!-- PLAN OUTPUT -->
+    <div class="section">
+
+        <h2>Execution Plan</h2>
+
+        <div id="plan-output"></div>
+
+    </div>
+
+    <!-- QUESTIONS BUTTON -->
+    <button onclick="generateQuestions()">
+        Generate Questions
+    </button>
+
+    <!-- QUESTIONS OUTPUT -->
+    <div class="section">
+
+        <h2>Select Questions</h2>
+
+        <div id="questions-output"></div>
+
+        <button onclick="generateAnswers()">
+            Generate Answers
+        </button>
+
+    </div>
+
+    <!-- ANSWERS OUTPUT -->
+    <div class="section">
+
+        <h2>Generated FAQs</h2>
+
+        <div id="answers-output"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+let generatedQuestions = [];
+
+
+/* -----------------------------------
+   GENERATE PLAN
+----------------------------------- */
+
+async function generatePlan(){
+
+    const url = document.getElementById("url").value;
+    const topic = document.getElementById("topic").value;
+
+    const output = document.getElementById("plan-output");
+
+    output.innerHTML = `
+        <p class="loading">Generating plan...</p>
+    `;
+
+    try{
+
+        const response = await fetch(
+            `/generate-plan?url=${encodeURIComponent(url)}&topic=${encodeURIComponent(topic)}`
+        );
+
+        const data = await response.json();
+
+        output.innerHTML = `
+            <pre>${data.plan}</pre>
+        `;
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        output.innerHTML = `
+            <p class="error">
+                Failed to generate plan.
+            </p>
+        `;
+    }
+}
+
+
+
+/* -----------------------------------
+   GENERATE QUESTIONS
+----------------------------------- */
+
+async function generateQuestions(){
+
+    const url = document.getElementById("url").value;
+    const topic = document.getElementById("topic").value;
+
+    const container = document.getElementById("questions-output");
+
+    container.innerHTML = `
+        <p class="loading">
+            Generating questions...
+        </p>
+    `;
+
+    try{
+
+        const response = await fetch(
+            `/generate-questions?url=${encodeURIComponent(url)}&topic=${encodeURIComponent(topic)}`
+        );
+
+        const data = await response.json();
+
+        console.log("QUESTION RESPONSE:", data);
+
+        generatedQuestions = data.questions.questions;
+
+        container.innerHTML = "";
+
+        if(!generatedQuestions || generatedQuestions.length === 0){
+
+            container.innerHTML = `
+                <p>No questions generated.</p>
+            `;
+
+            return;
+        }
+
+        generatedQuestions.forEach((item, index) => {
+
+            container.innerHTML += `
+
+                <div class="question-box">
+
+                    <input
+                        type="checkbox"
+                        id="q${index}"
+                        checked
+                    >
+
+                    <label for="q${index}">
+
+                        ${item.question}
+
+                        <strong>
+                            (${item.category})
+                        </strong>
+
+                    </label>
+
+                </div>
+
+            `;
+
+        });
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        container.innerHTML = `
+            <p class="error">
+                Failed to generate questions.
+            </p>
+        `;
+    }
+}
+
+
+
+/* -----------------------------------
+   GENERATE ANSWERS
+----------------------------------- */
+
+async function generateAnswers(){
+
+    const container = document.getElementById("answers-output");
+
+    container.innerHTML = `
+        <p class="loading">
+            Generating answers...
+        </p>
+    `;
+
+    const selectedQuestions = [];
+
+    generatedQuestions.forEach((item, index) => {
+
+        const checkbox = document.getElementById(`q${index}`);
+
+        if(checkbox && checkbox.checked){
+
+            selectedQuestions.push({
+                question: item.question,
+                category: item.category
+            });
+
+        }
+
+    });
+
+    // No questions selected
+    if(selectedQuestions.length === 0){
+
+        container.innerHTML = `
+            <p class="error">
+                Please select at least one question.
+            </p>
+        `;
+
+        return;
+    }
+
+    try{
+
+        const response = await fetch("/generate-answers", {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body: JSON.stringify({
+
+                questions:selectedQuestions,
+
+                url:document.getElementById("url").value
+
+            })
+
+        });
+
+        const data = await response.json();
+
+        console.log("ANSWER RESPONSE:", data);
+
+        container.innerHTML = "";
+
+        // Backend error
+        if(data.error){
+
+            container.innerHTML = `
+                <p class="error">
+                    ${data.error}
+                </p>
+            `;
+
+            return;
+        }
+
+        // No FAQ returned
+        if(!data.faq || data.faq.length === 0){
+
+            container.innerHTML = `
+                <p>No answers generated.</p>
+            `;
+
+            return;
+        }
+
+        // Render FAQs
+        data.faq.forEach(item => {
+
+            container.innerHTML += `
+
+                <div class="faq-box">
+
+                    <h3>
+                        ${item.question}
+                    </h3>
+
+                    <p>
+                        ${item.answer}
+                    </p>
+
+                    <small>
+
+                        <strong>
+                            Category:
+                        </strong>
+
+                        ${item.category}
+
+                    </small>
+
+                </div>
+
+            `;
+
+        });
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        container.innerHTML = `
+            <p class="error">
+                Failed to generate answers.
+            </p>
+        `;
+    }
+}
+
+</script>
+
+</body>
+</html>
