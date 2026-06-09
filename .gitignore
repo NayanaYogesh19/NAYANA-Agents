@@ -50,3 +50,30 @@ generated_content.pdf
 # IDE
 .vscode/
 .idea/
+
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+.venv/
+venv/
+
+# Environment
+.env
+
+# Google Credentials
+credentials.json
+token.json
+token_backup.json
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
