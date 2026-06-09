@@ -77,3 +77,9 @@ token_backup.json
 # OS Files
 .DS_Store
 Thumbs.db
+
+token.json
+token_backup.json
+token_bakup.json
+credentials.json
+.env

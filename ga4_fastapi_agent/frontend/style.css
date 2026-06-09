@@ -1,0 +1,305 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f5f9ff;
+    color:#1f2937;
+    min-height:100vh;
+    padding:30px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:#ffffff;
+    border-radius:12px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.08);
+    overflow:hidden;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+header{
+    background:#2563eb;
+    color:white;
+    padding:30px;
+}
+
+header h1{
+    font-size:32px;
+    margin-bottom:10px;
+}
+
+header p{
+    font-size:16px;
+    opacity:0.9;
+}
+
+/* =========================
+   SECTIONS
+========================= */
+
+.selection-section,
+.input-section,
+.button-section,
+.output-section{
+    padding:25px 30px;
+}
+
+.input-section{
+    border-top:1px solid #e5e7eb;
+}
+
+.output-section{
+    border-top:1px solid #e5e7eb;
+}
+
+/* =========================
+   FORM ELEMENTS
+========================= */
+
+.form-group{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:#374151;
+}
+
+select,
+input,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    font-size:14px;
+    outline:none;
+    transition:0.3s;
+}
+
+select:focus,
+input:focus,
+textarea:focus{
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,0.15);
+}
+
+textarea{
+    min-height:120px;
+    resize:vertical;
+}
+
+/* =========================
+   DYNAMIC INPUT GRID
+========================= */
+
+.dynamic-inputs{
+    display:grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(280px,1fr)
+        );
+    gap:20px;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.button-section{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.run-btn{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:12px 24px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    transition:0.3s;
+}
+
+.run-btn:hover{
+    background:#1d4ed8;
+}
+
+.reset-btn{
+    background:#ef4444;
+    color:white;
+    border:none;
+    padding:12px 24px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    transition:0.3s;
+}
+
+.reset-btn:hover{
+    background:#dc2626;
+}
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-section{
+    text-align:center;
+    padding:25px;
+}
+
+.loader{
+    width:45px;
+    height:45px;
+    border:5px solid #dbeafe;
+    border-top:5px solid #2563eb;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:auto;
+    margin-bottom:10px;
+}
+
+@keyframes spin{
+
+    0%{
+        transform:rotate(0deg);
+    }
+
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+/* =========================
+   OUTPUT
+========================= */
+
+#reportOutput{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:20px;
+    min-height:300px;
+    overflow:auto;
+}
+
+.placeholder{
+    text-align:center;
+    color:#6b7280;
+    padding:50px;
+}
+
+.report-title{
+    color:#2563eb;
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:20px;
+}
+
+.report-block{
+    background:white;
+    border-left:5px solid #2563eb;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:8px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+}
+
+.report-row{
+    margin-bottom:8px;
+}
+
+.report-label{
+    font-weight:600;
+    color:#374151;
+}
+
+.report-value{
+    color:#111827;
+}
+
+/* =========================
+   TABLES
+========================= */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+table th{
+    background:#2563eb;
+    color:white;
+    padding:12px;
+    text-align:left;
+}
+
+table td{
+    padding:10px;
+    border:1px solid #e5e7eb;
+}
+
+table tr:nth-child(even){
+    background:#f8fafc;
+}
+
+/* =========================
+   SECTION HEADINGS
+========================= */
+
+h2{
+    color:#2563eb;
+    margin-bottom:20px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:768px){
+
+    body{
+        padding:15px;
+    }
+
+    header{
+        padding:20px;
+    }
+
+    header h1{
+        font-size:24px;
+    }
+
+    .selection-section,
+    .input-section,
+    .button-section,
+    .output-section{
+        padding:20px;
+    }
+
+    .button-section{
+        flex-direction:column;
+    }
+
+    .run-btn,
+    .reset-btn{
+        width:100%;
+    }
+}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        GA4 + GSC Analytics Agent
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+
+        <header>
+
+            <h1>
+                GA4 + GSC Analytics Agent
+            </h1>
+
+            <p>
+                Analyze Google Analytics 4 and Google Search Console data
+            </p>
+
+        </header>
+
+        <!-- Selection Section -->
+
+        <section class="selection-section">
+
+            <div class="form-group">
+
+                <label>
+                    Module
+                </label>
+
+                <select id="module">
+
+                    <option value="">
+                        Select Module
+                    </option>
+
+                    <option value="ga4">
+                        GA4
+                    </option>
+
+                    <option value="gsc">
+                        GSC
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Report
+                </label>
+
+                <select id="report">
+
+                    <option value="">
+                        Select Report
+                    </option>
+
+                </select>
+
+            </div>
+
+        </section>
+
+        <!-- Dynamic Inputs -->
+
+        <section
+            id="inputSection"
+            class="input-section"
+        >
+
+            <h2>
+                Input Parameters
+            </h2>
+
+            <div
+                id="dynamicInputs"
+                class="dynamic-inputs"
+            >
+            </div>
+
+        </section>
+
+        <!-- Buttons -->
+
+        <section class="button-section">
+
+            <button
+                id="runBtn"
+                class="run-btn"
+            >
+                Run Report
+            </button>
+
+            <button
+                id="resetBtn"
+                class="reset-btn"
+            >
+                Start Over
+            </button>
+
+        </section>
+
+        <!-- Loading -->
+
+        <section
+            id="loadingSection"
+            class="loading-section"
+            style="display:none;"
+        >
+
+            <div class="loader"></div>
+
+            <p>
+                Fetching data...
+            </p>
+
+        </section>
+
+        <!-- Output -->
+
+        <section
+            id="outputSection"
+            class="output-section"
+        >
+
+            <h2>
+                Generated Report
+            </h2>
+
+            <div id="reportOutput">
+
+                <div class="placeholder">
+
+                    Select a report and click
+                    <strong>
+                        Run Report
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <script src="scripts.js?v=3"></script>
+
+</body>
+
+</html>
