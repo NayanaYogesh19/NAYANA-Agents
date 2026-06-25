@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Website Structure Planning Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple-dark:  #2E1A5C;
+    --purple-mid:   #4A2080;
+    --purple-light: #7B4FB5;
+    --purple-pale:  #F5F3FB;
+    --teal:         #0F6E56;
+    --teal-light:   #E1F5EE;
+    --gray:         #666;
+    --border:       #DDD;
+    --white:        #FFF;
+    --bg:           #F8F7FC;
+    --green:        #2E7D4F;
+    --amber:        #FAEEDA;
+    --red-light:    #FCEBEB;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #222; min-height: 100vh; }
+
+  header { background: var(--purple-dark); color: white; padding: 16px 32px; display: flex; align-items: center; gap: 14px; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  header p  { font-size: 11px; opacity: .7; margin-top: 2px; }
+  .hbadge { background: var(--purple-light); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+  .model-tag { margin-left: auto; background: rgba(255,255,255,.12); color: white; font-size: 11px; padding: 4px 10px; border-radius: 8px; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 28px 20px; }
+
+  /* Mode cards */
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .mode-card { border: 2px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; background: white; position: relative; transition: border .2s; }
+  .mode-card:hover { border-color: var(--purple-light); }
+  .mode-card.active { border-color: var(--purple-dark); background: var(--purple-pale); }
+  .mode-card input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+  .mode-card .icon { font-size: 26px; margin-bottom: 6px; }
+  .mode-card h3 { font-size: 13px; font-weight: 700; color: var(--purple-dark); margin-bottom: 3px; }
+  .mode-card p  { font-size: 11px; color: var(--gray); line-height: 1.5; }
+  .check { position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; color: white; }
+  .mode-card.active .check { background: var(--purple-dark); border-color: var(--purple-dark); }
+  .mode-card.active .check::after { content: "✓"; }
+
+  /* Cards */
+  .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 16px; }
+  .card.hidden { display: none; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--purple-dark); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #EEE; display: flex; align-items: center; gap: 8px; }
+  .step-badge { background: var(--purple-dark); color: white; font-size: 10px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Fields */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 11px; font-weight: 600; color: #444; margin-bottom: 4px; }
+  .req { color: var(--purple-light); margin-left: 2px; }
+  .tip { font-size: 10px; color: var(--gray); margin-top: 3px; line-height: 1.5; }
+
+  input[type=text], input[type=url], select, textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; color: #222; font-family: inherit; transition: border .2s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--purple-light); box-shadow: 0 0 0 3px rgba(123,79,181,.1); }
+  textarea { resize: vertical; min-height: 80px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Competitor rows */
+  .comp-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .comp-row input { flex: 1; }
+  .btn-remove { background: none; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; font-size: 15px; color: var(--gray); flex-shrink: 0; }
+  .btn-remove:hover { background: #F5F5F5; color: #c00; }
+  .btn-add { font-size: 11px; color: var(--purple-mid); background: none; border: 1px dashed var(--purple-light); border-radius: 6px; padding: 5px 12px; cursor: pointer; margin-top: 2px; }
+  .btn-add:hover { background: var(--purple-pale); }
+
+  /* Buttons */
+  .btn-primary { width: 100%; background: var(--purple-dark); color: white; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s; }
+  .btn-primary:hover:not(:disabled) { background: var(--purple-mid); }
+  .btn-primary:disabled { background: #AAA; cursor: not-allowed; }
+  .btn-secondary { width: 100%; background: white; color: var(--purple-dark); border: 2px solid var(--purple-dark); border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; margin-top: 10px; }
+  .btn-secondary:hover { background: var(--purple-pale); }
+
+  /* Audit preview panel */
+  #auditPreview { display: none; margin-bottom: 16px; }
+  .preview-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .preview-hdr { background: var(--purple-dark); color: white; padding: 12px 18px; font-size: 13px; font-weight: 700; }
+  .preview-body { padding: 18px; }
+  .preview-section { margin-bottom: 18px; }
+  .preview-section:last-child { margin-bottom: 0; }
+  .preview-section h4 { font-size: 12px; font-weight: 700; color: var(--purple-dark); margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid var(--purple-pale); }
+  .preview-site { background: var(--purple-pale); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .preview-site .site-url { font-size: 11px; font-weight: 700; color: var(--purple-mid); margin-bottom: 8px; }
+  .preview-grid { display: grid; grid-template-columns: 140px 1fr; gap: 4px 10px; font-size: 11px; }
+  .preview-grid .lbl { color: var(--gray); font-weight: 600; }
+  .preview-grid .val { color: #222; }
+  .bullet-list { list-style: none; padding: 0; margin: 0; }
+  .bullet-list li { font-size: 11px; color: #333; padding: 3px 0 3px 14px; position: relative; line-height: 1.5; }
+  .bullet-list li::before { content: "•"; position: absolute; left: 0; color: var(--purple-light); }
+  .comparison-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .comparison-table th { background: var(--purple-dark); color: white; padding: 7px 10px; text-align: left; }
+  .comparison-table td { padding: 6px 10px; border-bottom: 1px solid #EEE; vertical-align: top; }
+  .comparison-table tr:nth-child(even) td { background: var(--purple-pale); }
+  .tag-present { color: var(--teal); font-weight: 600; }
+  .tag-missing { color: #c00; font-weight: 600; }
+  .btn-run-wrap { margin-top: 16px; }
+
+  /* Status panel */
+  #statusPanel { display: none; margin-top: 22px; }
+  .status-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .status-hdr { background: var(--purple-dark); color: white; padding: 13px 18px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .status-body { padding: 18px; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .step { display: flex; align-items: flex-start; gap: 12px; padding: 9px 13px; border-radius: 8px; background: #F9F9F9; border: 1px solid #EEE; font-size: 12px; transition: all .3s; }
+  .step.active { background: var(--purple-pale); border-color: var(--purple-light); }
+  .step.done   { background: var(--teal-light); border-color: var(--teal); }
+  .step.error  { background: var(--red-light); border-color: #F09595; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #CCC; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; color: #999; transition: all .3s; }
+  .step.active .step-num { background: var(--purple-light); border-color: var(--purple-light); color: white; animation: pulse 1.4s infinite; }
+  .step.done   .step-num { background: var(--teal); border-color: var(--teal); color: white; }
+  .step.error  .step-num { background: #E24B4A; border-color: #E24B4A; color: white; }
+  .step-info .step-title { font-weight: 600; color: #333; }
+  .step-info .step-sub   { font-size: 10px; color: var(--gray); margin-top: 1px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+  /* Result */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .metric { background: var(--purple-pale); border-radius: 8px; padding: 10px; text-align: center; }
+  .metric .val { font-size: 24px; font-weight: 700; color: var(--purple-dark); }
+  .metric .lbl { font-size: 10px; color: var(--gray); margin-top: 2px; }
+  .btn-dl { display: block; width: 100%; background: var(--teal); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; transition: background .2s; }
+  .btn-dl:hover { background: #0A5542; }
+  .err-box { background: var(--red-light); border: 1px solid #F09595; border-radius: 8px; padding: 12px; font-size: 12px; color: #A32D2D; }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media(max-width:600px){ .mode-cards,.grid2,.metrics { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Website Structure Planning Agent <span class="hbadge">v2.0</span></h1>
+    <p>LangChain · Claude Haiku (OpenRouter) · Tavily Search API · ReportLab PDF</p>
+  </div>
+  <span class="model-tag">🤖 Claude Haiku via OpenRouter</span>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: Mode selection -->
+  <div class="mode-cards" id="modeSection">
+    <label class="mode-card active" id="cardAudit" for="modeAudit" onclick="selectMode('audit_existing')">
+      <input type="radio" name="mode" id="modeAudit" value="audit_existing" checked/>
+      <div class="check"></div>
+      <div class="icon">🔍</div>
+      <h3>Audit Existing Website</h3>
+      <p>Analyse your live site against competitors. Get specific recommendations to fix structural issues — orphan pages, URL problems, navigation gaps.</p>
+    </label>
+    <label class="mode-card" id="cardNew" for="modeNew" onclick="selectMode('new_structure')">
+      <input type="radio" name="mode" id="modeNew" value="new_structure"/>
+      <div class="check"></div>
+      <div class="icon">🏗️</div>
+      <h3>Plan New Website Structure</h3>
+      <p>Design an optimal architecture before you build — full sitemap, page hierarchy, URL structure, navigation, conversion paths and a phased build strategy.</p>
+    </label>
+  </div>
+
+  <!-- STEP 2: URLs card (mode-aware) -->
+  <div class="card" id="urlCard">
+    <div class="card-title"><span class="step-badge">1</span> <span id="urlCardTitle">Target & Competitor Domains</span></div>
+
+    <div class="field">
+      <label>Target Website URL <span class="req">*</span></label>
+      <input type="url" id="targetUrl" placeholder="https://yourwebsite.com"/>
+      <p class="tip" id="targetTip">The existing live website you want to audit.</p>
+    </div>
+
+    <!-- Competitor URLs — shown only for audit mode -->
+    <div id="competitorSection" class="field">
+      <label>Competitor Website URLs <span class="req">*</span></label>
+      <p class="tip" style="margin-bottom:8px">Enter 1–5 competitor websites to benchmark against your target site.</p>
+      <div id="compInputs">
+        <div class="comp-row">
+          <input type="url" placeholder="https://competitor1.com"/>
+          <button class="btn-remove" onclick="removeComp(this)">×</button>
+        </div>
+        <div class="comp-row">
+          <input type="url" placeholder="https://competitor2.com"/>
+          <button class="btn-remove" onclick="removeComp(this)">×</button>
+        </div>
+      </div>
+      <button class="btn-add" onclick="addComp()">+ Add competitor URL</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Business Goal & Type -->
+  <div class="card hidden" id="goalCard">
+    <div class="card-title"><span class="step-badge">2</span> Business Type & Goal</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Business Type <span class="req">*</span></label>
+        <select id="businessType">
+          <option value="">— Select —</option>
+          <option value="B2B">B2B — Business to Business</option>
+          <option value="B2C">B2C — Business to Consumer</option>
+        </select>
+        <p class="tip">Drives hierarchy depth and conversion path logic.</p>
+      </div>
+      <div class="field">
+        <label>Primary Business Goal <span class="req">*</span></label>
+        <select id="businessGoal" onchange="onGoalChange()">
+          <option value="">— Select —</option>
+          <option value="Lead Generation">Lead Generation</option>
+          <option value="Demo Booking">Demo Booking</option>
+          <option value="Consultation Request">Consultation Request</option>
+          <option value="E-commerce">E-commerce</option>
+          <option value="Product Sales">Product Sales</option>
+          <option value="SaaS Trial Sign-up">SaaS Trial Sign-up</option>
+          <option value="Subscription Sign-up">Subscription Sign-up</option>
+          <option value="Brand Awareness">Brand Awareness</option>
+          <option value="Event Registration">Event Registration</option>
+          <option value="Content Downloads">Content Downloads</option>
+          <option value="Custom">Custom (define below)</option>
+        </select>
+      </div>
+    </div>
+    <!-- Custom goal box — shown when "Custom" is selected -->
+    <div class="field hidden" id="customGoalField">
+      <label>Describe Your Custom Business Goal <span class="req">*</span></label>
+      <textarea id="customGoalText" rows="2" placeholder="e.g. Drive franchise enquiries from regional business owners looking to invest £50k+"></textarea>
+      <p class="tip">Be specific — the agent uses this to tailor the entire structure, CTAs, and conversion paths.</p>
+    </div>
+    <div class="field">
+      <label>Business Description <span style="font-weight:400;color:var(--gray)">(optional but recommended)</span></label>
+      <textarea id="businessDesc" rows="3" placeholder="Briefly describe your business, industry, target audience, and key products/services. The more context you give, the more specific and accurate the plan will be.&#10;&#10;Example: We are a B2B SaaS company providing project management software for construction firms with 50–500 employees in the UK and US. Our main product is a mobile-first field reporting tool."></textarea>
+      <p class="tip">This helps the AI avoid generic recommendations and tailor the plan to your exact business.</p>
+    </div>
+    <button class="btn-primary" onclick="submitBusinessGoal()">Next: Submit Business Info →</button>
+  </div>
+
+  <!-- STEP 4 (audit only): Run button directly -->
+  <div class="card hidden" id="auditNotesCard">
+    <div class="card-title"><span class="step-badge">3</span> Ready to Audit</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">The agent will scrape your target site and all competitor URLs, compare their structures, identify gaps and issues, then generate a full corrected structure plan with specific recommendations.</p>
+    <button class="btn-primary" id="btnRunAudit" onclick="runAnalysis()">🚀 Run Website Structure Analysis</button>
+  </div>
+
+  <!-- STEP 4 (new structure): Run button directly -->
+  <div class="card hidden" id="newRunCard">
+    <div class="card-title"><span class="step-badge">3</span> Ready to Plan</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">The agent will scrape your target website, analyse its current structure, and design a comprehensive new website plan including full page hierarchy, URL structure, navigation, conversion paths, and a phased build strategy.</p>
+    <button class="btn-primary" id="btnRunNew" onclick="runAnalysis()">🚀 Run Website Structure Analysis</button>
+  </div>
+
+  <!-- Audit Preview Panel (shown after business info submitted, before run) -->
+  <div id="auditPreview">
+    <div class="preview-card">
+      <div class="preview-hdr">📊 Live Site Analysis Preview — Review before running full analysis</div>
+      <div class="preview-body" id="auditPreviewBody">
+        <p style="font-size:12px;color:var(--gray)">Loading site analysis...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status panel -->
+  <div id="statusPanel">
+    <div class="status-card">
+      <div class="status-hdr">
+        <div id="sSpinner" class="spinner"></div>
+        <span id="sTitle">Analysing website structure…</span>
+      </div>
+      <div class="status-body">
+        <div class="steps" id="stepsContainer"></div>
+
+        <!-- Result -->
+        <div id="resultDiv" style="display:none">
+          <div class="metrics" id="metricsGrid"></div>
+          <a class="btn-dl" id="dlBtn" href="#">⬇ Download PDF Report</a>
+          <button class="btn-secondary" onclick="startOver()">↺ Start Over</button>
+        </div>
+
+        <!-- Error -->
+        <div id="errDiv" style="display:none">
+          <div class="err-box" id="errMsg"></div>
+          <button class="btn-primary" style="margin-top:10px;background:#A32D2D" onclick="startOver()">↺ Start Over</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMode    = 'audit_existing';
+let jobId          = null;
+let pollTimer      = null;
+let previewJobId   = null;
+let previewTimer   = null;
+
+// ── Step definitions per mode ─────────────────────────────────────────────────
+const AUDIT_STEPS = [
+  { title: 'Competitor Scraping & Benchmarking',   sub: 'Tavily API scraping competitor websites · BeautifulSoup extracting nav + URL patterns' },
+  { title: 'Target Site Scraping & Analysis',      sub: 'Scraping your live site · extracting existing URL structure and navigation' },
+  { title: 'Audit Findings Integration',           sub: 'AI processing audit notes · identifying crawl errors, orphan pages, redirect chains' },
+  { title: 'Page Hierarchy & IA Design',           sub: 'AI designing corrected site tree: Home → Category → Sub-cat → Detail' },
+  { title: 'URL Structure & Navigation Flow',      sub: 'Generating SEO-clean URL slugs · primary/secondary nav · breadcrumbs · internal links' },
+  { title: 'Conversion Path & CTA Mapping',        sub: 'Mapping goal-specific funnels · CTA placement per page tier' },
+  { title: 'Generate PDF Report',                  sub: 'Building PDF: sitemap · hierarchy · nav flow · conversion map · recommendations' },
+];
+const NEW_STEPS = [
+  { title: 'Target URL Scraping & Benchmarking',  sub: 'Tavily API scraping target website · extracting existing URL endpoints and structure' },
+  { title: 'Site Structure Analysis',             sub: 'AI analysing current pages, nav labels, URL patterns and content depth' },
+  { title: 'Page Hierarchy & IA Design',          sub: 'AI designing optimal new site tree: Home → Category → Sub-cat → Detail' },
+  { title: 'URL Structure & Navigation Flow',     sub: 'Generating SEO-clean URL slugs · primary/secondary nav · breadcrumbs · internal links' },
+  { title: 'Conversion Path & CTA Mapping',       sub: 'Mapping goal-specific funnels · CTA placement per page tier' },
+  { title: 'Recommendations & Strategy',          sub: 'Generating site-specific build recommendations and phased implementation plan' },
+  { title: 'Generate PDF Report',                 sub: 'Building PDF: sitemap · hierarchy · nav flow · conversion map · recommendations' },
+];
+
+// ── Mode selection ─────────────────────────────────────────────────────────────
+function selectMode(mode) {
+  currentMode = mode;
+  document.getElementById('cardAudit').classList.toggle('active', mode === 'audit_existing');
+  document.getElementById('cardNew').classList.toggle('active', mode === 'new_structure');
+  document.querySelector('#modeAudit').checked = (mode === 'audit_existing');
+  document.querySelector('#modeNew').checked   = (mode === 'new_structure');
+
+  const isAudit = mode === 'audit_existing';
+  document.getElementById('urlCardTitle').textContent = isAudit ? 'Target & Competitor Domains' : 'Target Domain';
+  document.getElementById('targetTip').textContent    = isAudit
+    ? 'The existing live website you want to audit.'
+    : 'The domain you are planning the new website for.';
+  document.getElementById('competitorSection').style.display = isAudit ? '' : 'none';
+
+  // Reset progressive cards
+  document.getElementById('goalCard').classList.add('hidden');
+  document.getElementById('auditNotesCard').classList.add('hidden');
+  document.getElementById('newRunCard').classList.add('hidden');
+  document.getElementById('auditPreview').style.display = 'none';
+  document.getElementById('statusPanel').style.display  = 'none';
+}
+
+// Show goal card once URL(s) entered — triggered on input blur
+document.getElementById('targetUrl').addEventListener('blur', revealGoalCard);
+document.getElementById('targetUrl').addEventListener('input', revealGoalCard);
+
+function revealGoalCard() {
+  const target = document.getElementById('targetUrl').value.trim();
+  if (!target) return;
+  const isAudit = currentMode === 'audit_existing';
+  if (isAudit) {
+    const comps = getCompUrls();
+    if (!comps.length) return;
+  }
+  document.getElementById('goalCard').classList.remove('hidden');
+}
+
+// Also reveal when competitor URL is filled
+document.getElementById('compInputs').addEventListener('input', function(e) {
+  if (e.target.type === 'url') revealGoalCard();
+});
+
+function onGoalChange() {
+  const v = document.getElementById('businessGoal').value;
+  document.getElementById('customGoalField').classList.toggle('hidden', v !== 'Custom');
+}
+
+// ── Submit business goal → show preview or run card ───────────────────────────
+function submitBusinessGoal() {
+  const target = document.getElementById('targetUrl').value.trim();
+  const btype  = document.getElementById('businessType').value;
+  const bgoal  = document.getElementById('businessGoal').value;
+  const custom = document.getElementById('customGoalText').value.trim();
+
+  if (!target)  { alert('Please enter the target website URL.'); return; }
+  if (!btype)   { alert('Please select a business type.'); return; }
+  if (!bgoal)   { alert('Please select a primary business goal.'); return; }
+  if (bgoal === 'Custom' && !custom) { alert('Please describe your custom business goal.'); return; }
+
+  if (currentMode === 'audit_existing') {
+    const comps = getCompUrls();
+    if (!comps.length) { alert('Please enter at least one competitor URL.'); return; }
+    document.getElementById('auditNotesCard').classList.remove('hidden');
+    document.getElementById('auditNotesCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    document.getElementById('newRunCard').classList.remove('hidden');
+    document.getElementById('newRunCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// ── Competitor helpers ────────────────────────────────────────────────────────
+function addComp() {
+  const c = document.getElementById('compInputs');
+  if (c.children.length >= 5) { alert('Maximum 5 competitor URLs.'); return; }
+  const row = document.createElement('div');
+  row.className = 'comp-row';
+  row.innerHTML = `<input type="url" placeholder="https://competitor.com" oninput="revealGoalCard()"/>
+    <button class="btn-remove" onclick="removeComp(this)">×</button>`;
+  c.appendChild(row);
+}
+
+function removeComp(btn) {
+  const c = document.getElementById('compInputs');
+  if (c.children.length <= 1) return;
+  btn.parentElement.remove();
+}
+
+function getCompUrls() {
+  return [...document.querySelectorAll('#compInputs input[type=url]')]
+    .map(i => i.value.trim()).filter(Boolean);
+}
+
+// ── Step rendering ────────────────────────────────────────────────────────────
+function renderSteps(steps) {
+  const container = document.getElementById('stepsContainer');
+  container.innerHTML = '';
+  steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'step';
+    div.id = `s${i + 1}`;
+    div.innerHTML = `<div class="step-num">${i + 1}</div>
+      <div class="step-info">
+        <div class="step-title">${s.title}</div>
+        <div class="step-sub">${s.sub}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function setStep(n, state) {
+  const el = document.getElementById(`s${n}`);
+  if (!el) return;
+  el.className = `step ${state}`;
+  const num = el.querySelector('.step-num');
+  if (state === 'done')  num.textContent = '✓';
+  else if (state === 'error') num.textContent = '✗';
+  else num.textContent = n;
+}
+
+function animSteps(totalSteps) {
+  const delays = [];
+  for (let i = 0; i < totalSteps; i++) delays.push(i * 12000);
+  delays.forEach((delay, i) => {
+    setTimeout(() => { if (jobId !== null) setStep(i + 1, 'active'); }, delay);
+    setTimeout(() => { if (jobId !== null) setStep(i + 1, 'done');   }, delay + 10000);
+  });
+}
+
+// ── Run analysis ──────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const target  = document.getElementById('targetUrl').value.trim();
+  const btype   = document.getElementById('businessType').value;
+  const bgoal   = document.getElementById('businessGoal').value;
+  const custom  = document.getElementById('customGoalText').value.trim();
+  const bdesc   = document.getElementById('businessDesc').value.trim();
+  const comps   = currentMode === 'audit_existing' ? getCompUrls() : [];
+  const audit   = '';
+
+  if (!target) { alert('Please enter the target website URL.'); return; }
+  if (!btype)  { alert('Please select a business type.'); return; }
+  if (!bgoal)  { alert('Please select a primary business goal.'); return; }
+  if (currentMode === 'audit_existing' && !comps.length) { alert('Please enter at least one competitor URL.'); return; }
+
+  const steps = currentMode === 'audit_existing' ? AUDIT_STEPS : NEW_STEPS;
+  renderSteps(steps);
+
+  document.getElementById('auditPreview').style.display = 'none';
+  document.getElementById('statusPanel').style.display  = 'block';
+  document.getElementById('resultDiv').style.display    = 'none';
+  document.getElementById('errDiv').style.display       = 'none';
+  document.getElementById('sSpinner').style.display     = 'inline-block';
+  document.getElementById('sTitle').textContent         = 'Analysing website structure…';
+  for (let i = 1; i <= steps.length; i++) setStep(i, '');
+
+  animSteps(steps.length);
+  document.getElementById('statusPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res  = await fetch('/api/run', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_url:      target,
+        mode:            currentMode,
+        business_type:   btype,
+        business_goal:   bgoal,
+        custom_goal:     bgoal === 'Custom' ? custom : null,
+        business_desc:   bdesc || null,
+        competitor_urls: comps,
+        audit_text:      audit || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Server error');
+    jobId     = data.job_id;
+    pollTimer = setInterval(poll, 4000);
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+// ── Poll for completion ───────────────────────────────────────────────────────
+async function poll() {
+  if (!jobId) return;
+  try {
+    const res  = await fetch(`/api/status/${jobId}`);
+    const data = await res.json();
+    if (data.status === 'complete') {
+      clearInterval(pollTimer);
+      const steps = currentMode === 'audit_existing' ? AUDIT_STEPS : NEW_STEPS;
+      for (let i = 1; i <= steps.length; i++) setStep(i, 'done');
+      showResult(data);
+    } else if (data.status === 'error') {
+      clearInterval(pollTimer);
+      showError(data.error || 'An unexpected error occurred.');
+    }
+  } catch (_) {}
+}
+
+// ── Show result ───────────────────────────────────────────────────────────────
+function showResult(data) {
+  document.getElementById('sSpinner').style.display = 'none';
+  document.getElementById('sTitle').textContent     = '✅ Analysis Complete';
+  const s = data.summary || {};
+
+  const isAudit = currentMode === 'audit_existing';
+  const metric2lbl = isAudit ? 'Competitors Analysed' : 'URLs Discovered';
+  const metric2val = isAudit ? (s.competitor_count || 0) : (s.urls_discovered || 0);
+  const metric3lbl = 'Recommendations';
+  const metric3val = s.recommendations || 0;
+  const metric4lbl = 'Conversion Paths';
+  const metric4val = s.conversion_paths || 0;
+
+  document.getElementById('metricsGrid').innerHTML = `
+    <div class="metric"><div class="val">${s.total_pages || 0}</div><div class="lbl">Pages Planned</div></div>
+    <div class="metric"><div class="val">${metric2val}</div><div class="lbl">${metric2lbl}</div></div>
+    <div class="metric"><div class="val">${metric3val}</div><div class="lbl">${metric3lbl}</div></div>
+    <div class="metric"><div class="val">${metric4val}</div><div class="lbl">${metric4lbl}</div></div>`;
+
+  document.getElementById('resultDiv').style.display = 'block';
+  const dlJobId = jobId;
+  jobId = null;
+  document.getElementById('dlBtn').href = `/api/download/${dlJobId}`;
+}
+
+// ── Show error ────────────────────────────────────────────────────────────────
+function showError(msg) {
+  document.getElementById('sSpinner').style.display = 'none';
+  document.getElementById('sTitle').textContent     = '❌ Analysis Failed';
+  document.getElementById('errMsg').textContent     = msg;
+  document.getElementById('errDiv').style.display   = 'block';
+  const steps = currentMode === 'audit_existing' ? AUDIT_STEPS : NEW_STEPS;
+  for (let i = 1; i <= steps.length; i++) {
+    const el = document.getElementById(`s${i}`);
+    if (el && el.classList.contains('active')) setStep(i, 'error');
+  }
+  jobId = null;
+}
+
+// ── Start over ────────────────────────────────────────────────────────────────
+function startOver() {
+  if (pollTimer) clearInterval(pollTimer);
+  jobId = null;
+  pollTimer = null;
+
+  // Reset all fields
+  document.getElementById('targetUrl').value      = '';
+  document.getElementById('businessType').value   = '';
+  document.getElementById('businessGoal').value   = '';
+  document.getElementById('customGoalText').value = '';
+  document.getElementById('businessDesc').value   = '';
+
+  // Reset competitor inputs to 2 blank rows
+  const ci = document.getElementById('compInputs');
+  ci.innerHTML = `
+    <div class="comp-row"><input type="url" placeholder="https://competitor1.com" oninput="revealGoalCard()"/><button class="btn-remove" onclick="removeComp(this)">×</button></div>
+    <div class="comp-row"><input type="url" placeholder="https://competitor2.com" oninput="revealGoalCard()"/><button class="btn-remove" onclick="removeComp(this)">×</button></div>`;
+
+  // Hide all progressive cards
+  document.getElementById('goalCard').classList.add('hidden');
+  document.getElementById('auditNotesCard').classList.add('hidden');
+  document.getElementById('newRunCard').classList.add('hidden');
+  document.getElementById('customGoalField').classList.add('hidden');
+  document.getElementById('auditPreview').style.display = 'none';
+  document.getElementById('statusPanel').style.display  = 'none';
+  document.getElementById('resultDiv').style.display    = 'none';
+  document.getElementById('errDiv').style.display       = 'none';
+
+  // Reset to audit mode
+  selectMode('audit_existing');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init
+selectMode('audit_existing');
+</script>
+</body>
+</html>
