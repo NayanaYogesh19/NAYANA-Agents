@@ -8,24 +8,23 @@
 </head>
 <body>
 
-<div class="atmosphere"></div>
 <div class="toast-container" id="toastContainer"></div>
 
 <div class="app-outer">
-  <div class="app-shell" style="flex-direction:row;">
+  <div class="app-shell">
 
-    <!-- ══ LEFT PANEL — History ══ -->
+    <!-- ══ SIDEBAR ══ -->
     <aside class="history-panel" id="historyPanel">
       <div class="history-header">
-        <div class="sidebar-logo" style="margin:0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="sidebar-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
         </div>
         <span class="history-brand">InGovern</span>
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme" style="margin-left:auto;width:34px;height:34px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -36,100 +35,100 @@
       </div>
 
       <button class="btn btn-brand new-report-btn" id="newReportBtn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Report
       </button>
 
-      <div class="history-section-label">History</div>
+      <div class="history-section-label">Recent Reports</div>
       <div class="history-list" id="historyList">
-        <div class="history-empty" id="historyEmpty">No reports yet. Run your first analysis.</div>
+        <div class="history-empty" id="historyEmpty">No reports yet.<br>Upload a notice to begin.</div>
       </div>
     </aside>
 
-    <!-- ══ RIGHT CONTENT ══ -->
+    <!-- ══ MAIN AREA ══ -->
     <div class="main-content">
 
       <!-- Topbar -->
       <header class="topbar">
         <div>
-          <div class="topbar-title" id="pageTitle">InGovern Governance Agent</div>
+          <div class="topbar-title" id="pageTitle">Governance Analysis Platform</div>
           <div class="topbar-sub" id="pageSubtitle">AI-powered proxy advisory for Indian listed companies</div>
         </div>
         <div class="topbar-right">
-          <span class="badge badge-agm" id="sessionBadge" style="display:none;"></span>
+          <span id="sessionBadge" style="display:none;font-size:0.72rem;font-weight:600;color:var(--text-secondary);"></span>
         </div>
       </header>
 
-      <!-- ══ SCROLLABLE MAIN ══ -->
+      <!-- Scrollable body -->
       <main class="app-main" id="appMain">
 
-        <!-- ── VIEW: HOME (shown when no report is active) ── -->
+        <!-- ── VIEW: HOME ── -->
         <div id="view-home" class="view active">
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;">
-            <div style="width:72px;height:72px;border-radius:1.5rem;background:linear-gradient(135deg,#7C3AED,#4F46E5);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;box-shadow:0 12px 32px rgba(124,58,237,0.35);">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:10px;background:var(--navy-700);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;border:1px solid rgba(255,255,255,0.1);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
             </div>
-            <h1 style="font-size:1.75rem;font-weight:900;letter-spacing:-0.03em;color:var(--text-primary);margin-bottom:0.5rem;">InGovern Governance Agent</h1>
-            <p style="color:var(--text-muted);font-size:0.95rem;max-width:420px;margin-bottom:2rem;">AI-powered proxy advisory for AGM, EGM & Postal Ballot notices of Indian listed companies.</p>
-            <button class="btn btn-brand" style="padding:0.75rem 2rem;font-size:1rem;" onclick="document.getElementById('newReportBtn').click()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Start New Report
+            <h1 style="font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;color:var(--text-primary);margin-bottom:0.5rem;">InGovern Governance Agent</h1>
+            <p style="color:var(--text-secondary);font-size:0.875rem;max-width:400px;line-height:1.7;margin-bottom:2rem;">Upload an AGM, EGM, or Postal Ballot notice to generate a structured governance analysis with InGovern-grade commentary.</p>
+            <button class="btn btn-brand" style="padding:0.625rem 1.5rem;" onclick="document.getElementById('newReportBtn').click()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Start New Analysis
             </button>
           </div>
         </div>
 
-        <!-- ── VIEW: NEW REPORT FORM ── -->
+        <!-- ── VIEW: UPLOAD FORM ── -->
         <div id="view-form" class="view">
           <div class="section-label">New Analysis</div>
           <h2 class="page-title" style="margin-bottom:1.5rem;">Upload Notice</h2>
 
-          <div class="glass-card-static p-6" style="max-width:560px;">
-            <div style="display:flex;flex-direction:column;gap:1.1rem;">
+          <div class="glass-card-static p-6" style="max-width:520px;">
+            <div style="display:flex;flex-direction:column;gap:1rem;">
               <div>
-                <label class="meta-label" style="display:block;margin-bottom:0.4rem;">Company Name</label>
+                <label class="meta-label" style="display:block;margin-bottom:0.35rem;">Company Name</label>
                 <input type="text" id="companyName" class="glass-input" placeholder="e.g. Zomato Limited"/>
               </div>
               <div>
-                <label class="meta-label" style="display:block;margin-bottom:0.4rem;">Financial Year</label>
+                <label class="meta-label" style="display:block;margin-bottom:0.35rem;">Financial Year</label>
                 <input type="text" id="fiscalYear" class="glass-input" placeholder="e.g. 2023-24"/>
               </div>
               <div>
-                <label class="meta-label" style="display:block;margin-bottom:0.4rem;">PDF Notice</label>
+                <label class="meta-label" style="display:block;margin-bottom:0.35rem;">Notice PDF</label>
                 <div class="upload-zone" id="uploadZone">
                   <div class="upload-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                       <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                   </div>
-                  <div style="font-weight:600;color:var(--text-secondary);font-size:0.9rem;">Drag & drop PDF here</div>
+                  <div style="font-weight:600;color:var(--text-secondary);font-size:0.875rem;">Drag &amp; drop PDF here</div>
                   <div class="text-xs text-muted mt-1">or click to browse</div>
                   <input type="file" id="pdfInput" accept=".pdf" style="display:none;"/>
                 </div>
                 <div id="fileLabel" class="text-xs text-muted mt-1" style="display:none;"></div>
               </div>
-              <button class="btn btn-brand" id="uploadBtn" style="width:100%;justify-content:center;margin-top:0.25rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <button class="btn btn-brand" id="uploadBtn" style="width:100%;justify-content:center;padding:0.625rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                Upload & Run Analysis
+                Upload &amp; Run Analysis
               </button>
             </div>
           </div>
         </div>
 
-        <!-- ── VIEW: RUNNING (progress) ── -->
+        <!-- ── VIEW: RUNNING ── -->
         <div id="view-running" class="view">
-          <div class="section-label">Running Pipeline</div>
+          <div class="section-label">Pipeline Running</div>
           <h2 class="page-title" style="margin-bottom:1.5rem;" id="runningCompanyTitle">Analysing…</h2>
 
-          <div class="glass-card-static p-6" style="max-width:580px;">
+          <div class="glass-card-static" style="max-width:560px;overflow:hidden;">
             <div class="pipeline-progress" id="pipelineProgress">
-              <div class="pipeline-step" id="ps-upload">
+              <div class="pipeline-step ps-running" id="ps-upload">
                 <div class="ps-icon"><div class="ps-spinner"></div></div>
                 <div class="ps-body">
                   <div class="ps-label">Uploading Notice</div>
@@ -137,7 +136,6 @@
                 </div>
                 <div class="ps-badge" id="psb-upload"></div>
               </div>
-              <div class="pipeline-connector"></div>
               <div class="pipeline-step ps-pending" id="ps-metadata">
                 <div class="ps-icon"><span class="ps-num">2</span></div>
                 <div class="ps-body">
@@ -146,25 +144,22 @@
                 </div>
                 <div class="ps-badge" id="psb-metadata"></div>
               </div>
-              <div class="pipeline-connector"></div>
               <div class="pipeline-step ps-pending" id="ps-board">
                 <div class="ps-icon"><span class="ps-num">3</span></div>
                 <div class="ps-body">
                   <div class="ps-label">Board of Directors</div>
-                  <div class="ps-desc">Director table & committees</div>
+                  <div class="ps-desc">Director table &amp; committees</div>
                 </div>
                 <div class="ps-badge" id="psb-board"></div>
               </div>
-              <div class="pipeline-connector"></div>
               <div class="pipeline-step ps-pending" id="ps-resolutions">
                 <div class="ps-icon"><span class="ps-num">4</span></div>
                 <div class="ps-body">
                   <div class="ps-label">Extracting Resolutions</div>
-                  <div class="ps-desc">Agenda items & resolution text</div>
+                  <div class="ps-desc">Agenda items &amp; resolution text</div>
                 </div>
                 <div class="ps-badge" id="psb-resolutions"></div>
               </div>
-              <div class="pipeline-connector"></div>
               <div class="pipeline-step ps-pending" id="ps-commentary">
                 <div class="ps-icon"><span class="ps-num">5</span></div>
                 <div class="ps-body">
@@ -173,7 +168,6 @@
                 </div>
                 <div class="ps-badge" id="psb-commentary"></div>
               </div>
-              <div class="pipeline-connector"></div>
               <div class="pipeline-step ps-pending" id="ps-report">
                 <div class="ps-icon"><span class="ps-num">6</span></div>
                 <div class="ps-body">
@@ -184,63 +178,68 @@
               </div>
             </div>
 
-            <!-- Progress bar -->
-            <div style="margin-top:1.5rem;">
-              <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem;">
+            <div style="padding:1.125rem 1.25rem;border-top:1px solid var(--border-light);">
+              <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:0.35rem;">
                 <span id="progressLabel">Starting…</span>
                 <span id="progressPct">0%</span>
               </div>
-              <div style="height:6px;background:var(--border-subtle);border-radius:99px;overflow:hidden;">
-                <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#7C3AED,#6366F1);border-radius:99px;transition:width 0.5s ease;"></div>
+              <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+                <div id="progressBar" style="height:100%;width:0%;background:var(--navy-700);border-radius:99px;transition:width 0.5s ease;"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ── VIEW: REPORT (all sections, scrollable) ── -->
+        <!-- ── VIEW: REPORT ── -->
         <div id="view-report" class="view">
 
-          <!-- Report header -->
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+          <!-- Report header row -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
             <div>
               <div class="section-label">Governance Report</div>
               <h2 class="page-title" id="reportCompanyTitle">—</h2>
-              <div class="text-muted text-sm" id="reportMetaSub" style="margin-top:0.25rem;"></div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;" id="reportMetaSub"></div>
             </div>
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-              <button class="btn btn-primary" id="downloadReportBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <div style="display:flex;gap:0.625rem;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-primary btn-sm" id="downloadReportBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download PDF
               </button>
-              <button class="btn btn-secondary" id="approveReportBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <button class="btn btn-secondary btn-sm" id="approveReportBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 Approve
               </button>
-              <button class="btn btn-ghost" id="startOverBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-                Start Over
+              <button class="btn btn-ghost btn-sm" id="startOverBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+                New Report
               </button>
             </div>
           </div>
 
-          <!-- ① Metadata strip -->
-          <div class="glass-card-static p-5 mb-4" id="rpt-metadata-card">
-            <div class="section-label" style="margin-bottom:0.75rem;">Notice Details</div>
+          <!-- ① Notice Details — clean data grid -->
+          <div class="glass-card-static mb-4" id="rpt-metadata-card">
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:0.5rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="section-label" style="margin:0;">Notice Details</span>
+            </div>
             <div class="meta-grid" id="rpt-metadata"></div>
           </div>
 
           <!-- ② Board of Directors -->
-          <div class="glass-card-static mb-4" style="padding:0;overflow:hidden;" id="rpt-board-card">
-            <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border-subtle);">
-              <div class="section-label" style="margin:0 0 0.1rem;">Board of Directors</div>
-              <div class="text-muted text-xs" id="rpt-board-sub"></div>
+          <div class="glass-card-static mb-4" style="overflow:hidden;" id="rpt-board-card">
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="section-label" style="margin:0;">Board of Directors</span>
+              </div>
+              <span class="text-xs text-muted" id="rpt-board-sub"></span>
             </div>
             <div style="overflow-x:auto;">
               <table class="data-table" id="rpt-board-table">
                 <thead>
                   <tr>
-                    <th>#</th><th>Name</th><th>Years</th><th>Appointed</th>
-                    <th>Chairman</th><th>MD/CEO</th><th>Exec</th><th>Non-Exec</th><th>Indep.</th>
+                    <th>#</th><th>Name</th><th>Tenure</th><th>Appointed</th>
+                    <th>Chair</th><th>MD/CEO</th><th>Exec</th><th>Non-Exec</th><th>Indep.</th>
                     <th>Audit</th><th>NRC</th><th>SR</th><th>Risk</th><th>CSR</th><th>Other Co.</th>
                   </tr>
                 </thead>
@@ -251,11 +250,14 @@
             </div>
           </div>
 
-          <!-- ③ Proposals summary table -->
-          <div class="glass-card-static mb-4" style="padding:0;overflow:hidden;" id="rpt-summary-card">
-            <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border-subtle);">
-              <div class="section-label" style="margin:0 0 0.1rem;">Proposals Summary</div>
-              <div class="text-muted text-xs" id="rpt-summary-sub"></div>
+          <!-- ③ Proposals summary -->
+          <div class="glass-card-static mb-4" style="overflow:hidden;" id="rpt-summary-card">
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span class="section-label" style="margin:0;">Proposals Summary</span>
+              </div>
+              <span class="text-xs text-muted" id="rpt-summary-sub"></span>
             </div>
             <div style="overflow-x:auto;">
               <table class="data-table" id="rpt-summary-table">
@@ -271,34 +273,36 @@
           </div>
 
           <!-- ④ Resolution detail cards -->
-          <div class="section-label" style="margin-bottom:0.75rem;">Resolution Analysis</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span class="section-label" style="margin:0;">Resolution Analysis</span>
+          </div>
           <div id="rpt-resolutions" class="stagger"></div>
 
           <!-- ⑤ Approve section -->
-          <div class="glass-card-static p-6 mt-4" id="rpt-approve-card" style="display:none;">
+          <div class="glass-card-static p-5 mt-4" id="rpt-approve-card" style="display:none;">
             <div class="section-label" style="margin-bottom:0.75rem;">Approve Report</div>
-            <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
-              <div style="flex:1;min-width:180px;">
-                <label class="meta-label" style="display:block;margin-bottom:0.4rem;">Approved By</label>
+            <div style="display:flex;gap:0.875rem;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:1;min-width:160px;">
+                <label class="meta-label" style="display:block;margin-bottom:0.35rem;">Approved By</label>
                 <input type="text" id="approvedBy" class="glass-input" placeholder="Your name"/>
               </div>
-              <div style="flex:2;min-width:220px;">
-                <label class="meta-label" style="display:block;margin-bottom:0.4rem;">Comments</label>
+              <div style="flex:2;min-width:200px;">
+                <label class="meta-label" style="display:block;margin-bottom:0.35rem;">Comments</label>
                 <input type="text" id="approvalComments" class="glass-input" placeholder="Optional comments…"/>
               </div>
-              <button class="btn btn-brand" id="submitApprovalBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Submit Approval
+              <button class="btn btn-brand btn-sm" id="submitApprovalBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Submit
               </button>
             </div>
             <div id="approvalResult" style="display:none;margin-top:1rem;"></div>
           </div>
 
-          <!-- Start Over button at bottom -->
           <div style="text-align:center;padding:2rem 0;">
-            <button class="btn btn-ghost" id="startOverBtn2" style="color:var(--text-muted);">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-              Start Over — New Report
+            <button class="btn btn-ghost btn-sm" id="startOverBtn2" style="color:var(--text-muted);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Start New Report
             </button>
           </div>
 
@@ -306,17 +310,17 @@
 
       </main>
     </div><!-- end main-content -->
-  </div>
-</div>
+  </div><!-- end app-shell -->
+</div><!-- end app-outer -->
 
-<!-- Approve confirm modal -->
-<div id="approveModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;">
-  <div class="glass-card-static p-6" style="width:420px;border-radius:2rem;">
-    <h3 class="card-title mb-4">Approve Report</h3>
-    <div style="display:flex;flex-direction:column;gap:1rem;">
+<!-- Approve modal -->
+<div id="approveModal">
+  <div class="glass-card-static p-6" style="width:400px;border-radius:8px;">
+    <h3 class="card-title" style="margin-bottom:1rem;">Approve Report</h3>
+    <div style="display:flex;flex-direction:column;gap:0.875rem;">
       <input type="text" id="modalApprovedBy" class="glass-input" placeholder="Your name"/>
-      <textarea id="modalComments" class="glass-input" rows="3" placeholder="Comments (optional)…" style="resize:vertical;border-radius:0.875rem;"></textarea>
-      <div class="flex gap-3">
+      <textarea id="modalComments" class="glass-input" rows="3" placeholder="Comments (optional)…" style="resize:vertical;"></textarea>
+      <div class="flex gap-3" style="margin-top:0.25rem;">
         <button class="btn btn-secondary" style="flex:1;justify-content:center;" id="modalCancelBtn">Cancel</button>
         <button class="btn btn-brand" style="flex:1;justify-content:center;" id="modalApproveBtn">Approve</button>
       </div>

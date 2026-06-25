@@ -146,7 +146,7 @@ function loadHistoryReport(item) {
   state.fiscalYear = item.fiscalYear;
   state.reportData = item.reportData;
   el("pageTitle").textContent = item.company;
-  el("pageSubtitle").textContent = `${item.fiscalYear} · ${item.noticeType || "AGM"} · Historical Report`;
+  el("pageSubtitle").textContent = `${item.fiscalYear || ""} · ${item.noticeType || "AGM"} · Historical Report`;
   const badge = el("sessionBadge");
   badge.textContent = item.noticeType || "AGM";
   badge.className = `badge badge-${(item.noticeType || "AGM").toLowerCase()}`;
@@ -496,7 +496,7 @@ function renderBoard(directors) {
   }
 
   const tick = (v) => {
-    if (v === "Chairman") return `<span style="color:var(--brand-400);font-weight:700;">C</span>`;
+    if (v === "Chairman") return `<span style="color:var(--blue-400);font-weight:700;">C</span>`;
     if (v === true || v === "true" || v === "True") return `<span style="color:#22c55e;font-weight:700;">✓</span>`;
     return `<span style="color:var(--text-muted);">—</span>`;
   };
@@ -563,9 +563,9 @@ function renderResolutionCards(resolutions) {
     const type = res.special_resolution ? "Special" : "Ordinary";
 
     const S = {
-      h:  (t) => `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#6366f1;margin:1.4rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid #e5e7eb;">${t}</div>`,
-      li: (t) => `<div style="display:flex;gap:0.5rem;margin:0 0 0.4rem;color:#374151;font-size:0.895rem;line-height:1.8;"><span style="color:#6366f1;flex-shrink:0;">•</span><span>${escapeHtml(t.replace(/^[•\-]\s*/,""))}</span></div>`,
-      p:  (t) => `<p style="margin:0 0 0.85rem;color:#374151;font-size:0.895rem;line-height:1.85;">${escapeHtml(t)}</p>`,
+      h:  (t) => `<div class="commentary-section-label" style="margin:1.25rem 0 0.5rem;">${t}</div>`,
+      li: (t) => `<div style="display:flex;gap:0.5rem;margin:0 0 0.35rem;font-size:0.84rem;line-height:1.75;color:var(--text-secondary);"><span style="color:var(--accent);flex-shrink:0;">•</span><span>${escapeHtml(t.replace(/^[•\-]\s*/,""))}</span></div>`,
+      p:  (t) => `<p style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`,
     };
 
     // Render a paragraph: split on newlines, bullet lines get bullet treatment
@@ -597,19 +597,17 @@ function renderResolutionCards(resolutions) {
     const commentary = (comm.ingovern_commentary||[]).length   ? S.h("InGovern Commentary") + renderParas(comm.ingovern_commentary)   : "";
     const concerns   = (comm.governance_concerns||[]).length   ? S.h("Governance Concerns") +
       (comm.governance_concerns).map((c,i) =>
-        `<p style="margin:0 0 0.6rem;padding-left:1.1rem;color:#374151;font-size:0.895rem;line-height:1.8;position:relative;">
-           <span style="position:absolute;left:0;font-weight:600;color:#6366f1;">${i+1}.</span>${escapeHtml(c.replace(/^\d+[.)]\s*/,""))}
-         </p>`
+        `<div class="concern-item">${i+1}. ${escapeHtml(c.replace(/^\d+[.)]\s*/,""))}</div>`
       ).join("") : "";
     const conclusion = comm.closing_recommendation
-      ? S.h("Conclusion") + `<p style="margin:0;color:#374151;font-size:0.895rem;line-height:1.8;font-style:italic;">${escapeHtml(comm.closing_recommendation)}</p>` : "";
+      ? S.h("Conclusion") + `<div class="closing-rec ${getRecClass(rec).replace('badge-','rec-')}">${escapeHtml(comm.closing_recommendation)}</div>` : "";
 
     const card = document.createElement("div");
     card.className = "glass-card-static resolution-card mb-4";
     card.style.cssText = `animation-delay:${idx * 0.06}s;`;
 
     card.innerHTML = `
-      <div class="res-card-header" style="border-bottom:1px solid #e5e7eb;padding-bottom:1rem;margin-bottom:0;">
+      <div class="res-card-header">
         <div style="display:flex;align-items:flex-start;gap:0.875rem;flex-wrap:wrap;flex:1;">
           <span class="res-num">${escapeHtml(String(res.resolution_number ?? ""))}</span>
           <div style="flex:1;min-width:0;">
@@ -628,7 +626,7 @@ function renderResolutionCards(resolutions) {
           </div>
           <div class="rec-item">
             <div class="meta-label">INGOVERN</div>
-            <span class="badge ${getRecClass(rec)}" style="font-size:0.82rem;padding:0.28rem 0.65rem;">${escapeHtml(rec)}</span>
+            <span class="badge ${getRecClass(rec)}">${escapeHtml(rec)}</span>
           </div>
           ${comm.confidence ? `<div class="rec-item">
             <div class="meta-label">CONFIDENCE</div>
@@ -729,7 +727,7 @@ function startOver() {
   state.reportData = null;
   state.company    = "";
   state.fiscalYear = "";
-  el("pageTitle").textContent    = "InGovern Governance Agent";
+  el("pageTitle").textContent    = "Governance Analysis Platform";
   el("pageSubtitle").textContent = "AI-powered proxy advisory for Indian listed companies";
   el("sessionBadge").style.display = "none";
   resetForm();
