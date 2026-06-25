@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(git pull *)",
+      "Bash(git mv *)",
+      "Bash(grep -v \"^requirements.txt$\")",
+      "Bash(grep -v \"^\\\\.gitignore$\")",
+      "Bash(xargs '-I{}' sh -c 'dir=$\\(dirname \"{}\"\\); [ \"$dir\" != \".\" ] && mkdir -p \"governance_agent/$dir\"; git mv \"{}\" \"governance_agent/{}\"')",
+      "Bash(xargs '-I{}' sh -c 'dir=$\\(dirname \"{}\"\\); [ \"$dir\" != \".\" ] && mkdir -p \"form_ux_agent/$dir\"; git mv \"{}\" \"form_ux_agent/{}\"')",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

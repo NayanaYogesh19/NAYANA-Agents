@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Agents\\\\NAYANA-Agents-Clean\\\\website_structure_agent_v2\" -Recurse -Force -Depth 2 | Where-Object {!$_.PSIsContainer} | Select-Object FullName | Head -40)",
+      "PowerShell(Get-ChildItem \"C:\\\\Agents\\\\NAYANA-Agents-Clean\\\\website_structure_agent_v2\" -Recurse -Force -Depth 2 | Where-Object {!$_.PSIsContainer} | Select-Object -First 40 FullName)",
+      "PowerShell($path = \"C:\\\\Agents\\\\NAYANA-Agents-Clean\\\\website_structure_agent_v2\\\\{agents,tools,prompts,frontend,output}\"; Test-Path $path; \\(Get-ChildItem $path -Force -ErrorAction SilentlyContinue\\).Count)",
+      "Read(//c/Agents/NAYANA-Agents-Clean/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Agents\\\\NAYANA-Agents-Clean\\\\website_structure_agent_v2\" -Recurse -Force | Where-Object {!$_.PSIsContainer} | Where-Object {$_.FullName -notmatch \"venv|__pycache__|\\\\.claude\"} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem \"C:\\\\Agents\\\\NAYANA-Agents-Clean\\\\website_structure_agent_v2\" -Recurse -Force | Where-Object {!$_.PSIsContainer} | Where-Object {$_.FullName -notmatch \"venv|__pycache__|\\\\.claude|output\"} | Select-Object FullName)",
+      "Read(//c/Users/NAYANA/.claude/projects/c--Agents-NAYANA-Agents-Clean-website-structure-agent-v2/**)",
+      "Bash(powershell -Command \"Get-Content 'C:\\\\Users\\\\NAYANA\\\\.claude\\\\projects\\\\c--Agents-NAYANA-Agents-Clean-website-structure-agent-v2\\\\76e5eed9-a386-43b1-9096-39c7633a6059.jsonl' | Select-String -Pattern '\\\\\"file_path\\\\\"' | Select-Object -First 50\")"
+    ]
+  }
+}
