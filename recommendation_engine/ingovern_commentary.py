@@ -265,7 +265,7 @@ def _call_openrouter(prompt: str) -> dict:
     }
 
     payload = {
-        "model": "google/gemini-2.0-flash-001",
+        "model": "google/gemini-2.5-flash",
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user",   "content": prompt},
