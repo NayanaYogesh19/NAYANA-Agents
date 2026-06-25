@@ -562,45 +562,60 @@ function renderResolutionCards(resolutions) {
     const rec  = comm.ingovern_recommendation || res.cover_ingovern_rec || "—";
     const type = res.special_resolution ? "Special" : "Ordinary";
 
-    const S = {
-      h:  (t) => `<div class="commentary-section-label" style="margin:1.25rem 0 0.5rem;">${t}</div>`,
-      li: (t) => `<div style="display:flex;gap:0.5rem;margin:0 0 0.35rem;font-size:0.84rem;line-height:1.75;color:var(--text-secondary);"><span style="color:var(--accent);flex-shrink:0;">•</span><span>${escapeHtml(t.replace(/^[•\-]\s*/,""))}</span></div>`,
-      p:  (t) => `<p style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`,
-    };
+    // Render body_paragraphs (new InGovern house style — flowing prose, no section headers)
+    const renderBody = (paragraphs) => {
+      if (!paragraphs || !paragraphs.length) return "";
+      return paragraphs.map((para) => {
+        const t = (para || "").trim();
+        if (!t) return "";
 
-    // Render a paragraph: split on newlines, bullet lines get bullet treatment
-    const renderPara = (text) => {
-      const lines = text.split(/\n/);
-      if (lines.length === 1) {
-        return lines[0].trim().match(/^[•\-]/) ? S.li(lines[0]) : S.p(lines[0]);
-      }
-      let html = "";
-      let prose = [];
-      for (const line of lines) {
-        const t = line.trim();
-        if (!t) continue;
-        if (t.match(/^[•\-]/)) {
-          if (prose.length) { html += S.p(prose.join(" ")); prose = []; }
-          html += S.li(t);
-        } else {
-          prose.push(t);
+        // ✓ bullet line
+        if (t.startsWith("✓") || t.startsWith("•") || t.startsWith("-")) {
+          const text = t.replace(/^[✓•\-]\s*/, "");
+          return `<div style="display:flex;gap:0.5rem;margin:0 0 0.3rem;font-size:0.84rem;line-height:1.7;color:var(--text-secondary);">
+            <span style="color:var(--accent);flex-shrink:0;">✓</span>
+            <span>${escapeHtml(text)}</span>
+          </div>`;
         }
-      }
-      if (prose.length) html += S.p(prose.join(" "));
-      return html;
+
+        // **Bold concern paragraph** (We note that...)
+        if (t.startsWith("**") && t.endsWith("**")) {
+          const inner = t.slice(2, -2);
+          return `<p style="margin:0.85rem 0 0.4rem;font-size:0.84rem;line-height:1.75;color:var(--text-primary);font-weight:600;">${escapeHtml(inner)}</p>`;
+        }
+
+        // Closing recommendation sentence — render with coloured left border
+        const lc = t.toLowerCase();
+        if (lc.startsWith("we recommend shareholders")) {
+          const borderColor = rec === "AGAINST" ? "var(--rec-against)" : rec === "FOR*" ? "var(--rec-forstar)" : "var(--rec-for)";
+          return `<p style="margin:1rem 0 0;padding:0.5rem 0.75rem;border-left:3px solid ${borderColor};background:var(--bg-surface-2);font-size:0.84rem;line-height:1.7;color:var(--text-primary);font-weight:500;">${escapeHtml(t)}</p>`;
+        }
+
+        // Plain paragraph
+        return `<p style="margin:0 0 0.65rem;font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`;
+      }).join("");
     };
 
-    const renderParas = (arr) => (arr||[]).map(renderPara).join("");
+    // Use body_paragraphs (new format) or fall back to old section fields
+    let bodyHtml = "";
+    if ((comm.body_paragraphs || []).length) {
+      bodyHtml = renderBody(comm.body_paragraphs);
+    } else {
+      // Legacy fallback for old-format reports in history
+      const S = {
+        h:  (t) => `<div class="commentary-section-label" style="margin:1.25rem 0 0.5rem;">${t}</div>`,
+        p:  (t) => `<p style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`,
+        li: (t) => `<div style="display:flex;gap:0.5rem;margin:0 0 0.35rem;font-size:0.84rem;line-height:1.75;color:var(--text-secondary);"><span style="color:var(--accent);flex-shrink:0;">•</span><span>${escapeHtml(t.replace(/^[•\-]\s*/,""))}</span></div>`,
+      };
+      const rp = (arr) => (arr||[]).map(t => S.p(t)).join("");
+      bodyHtml = (comm.introduction ? S.h("Introduction") + S.p(comm.introduction) : "")
+               + ((comm.summary_paragraphs||[]).length ? S.h("Summary") + rp(comm.summary_paragraphs) : "")
+               + ((comm.ingovern_commentary||[]).length ? S.h("InGovern Commentary") + rp(comm.ingovern_commentary) : "")
+               + ((comm.governance_concerns||[]).length ? S.h("Governance Concerns")
+                  + (comm.governance_concerns).map((c,i) => `<div class="concern-item">${i+1}. ${escapeHtml(c.replace(/^\d+[.)]\s*/,""))}</div>`).join("") : "")
+               + (comm.closing_recommendation ? `<div class="closing-rec ${getRecClass(rec).replace('badge-','rec-')}">${escapeHtml(comm.closing_recommendation)}</div>` : "");
+    }
 
-    const intro      = comm.introduction    ? S.h("Introduction") + S.p(comm.introduction) : "";
-    const summary    = (comm.summary_paragraphs||[]).length    ? S.h("Summary")             + renderParas(comm.summary_paragraphs)    : "";
-    const commentary = (comm.ingovern_commentary||[]).length   ? S.h("InGovern Commentary") + renderParas(comm.ingovern_commentary)   : "";
-    const concerns   = (comm.governance_concerns||[]).length   ? S.h("Governance Concerns") +
-      (comm.governance_concerns).map((c,i) =>
-        `<div class="concern-item">${i+1}. ${escapeHtml(c.replace(/^\d+[.)]\s*/,""))}</div>`
-      ).join("") : "";
-    const conclusion = comm.closing_recommendation
-      ? S.h("Conclusion") + `<div class="closing-rec ${getRecClass(rec).replace('badge-','rec-')}">${escapeHtml(comm.closing_recommendation)}</div>` : "";
 
     const card = document.createElement("div");
     card.className = "glass-card-static resolution-card mb-4";
@@ -635,7 +650,7 @@ function renderResolutionCards(resolutions) {
         </div>
       </div>
       <div class="res-card-body" style="padding-top:0.1rem;">
-        ${intro}${summary}${commentary}${concerns}${conclusion}
+        ${bodyHtml}
       </div>
     `;
     container.appendChild(card);
