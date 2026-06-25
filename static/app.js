@@ -100,6 +100,9 @@ function renderHistory() {
   list.querySelectorAll(".history-item").forEach((n) => n.remove());
 
   history.forEach((item) => {
+    const wrap = document.createElement("div");
+    wrap.className = "history-item-wrap";
+
     const btn = document.createElement("button");
     btn.className = "history-item";
     const dt = new Date(item.date);
@@ -117,7 +120,24 @@ function renderHistory() {
       <div class="hi-date">${dateStr}</div>
     `;
     btn.addEventListener("click", () => loadHistoryReport(item));
-    list.appendChild(btn);
+
+    const del = document.createElement("button");
+    del.className = "history-delete-btn";
+    del.title = "Delete report";
+    del.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+    del.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const h = getHistory().filter(
+        (r) => !(r.company === item.company && r.date === item.date)
+      );
+      saveHistory(h);
+      renderHistory();
+      toast("Report removed from history", "info");
+    });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(del);
+    list.appendChild(wrap);
   });
 }
 

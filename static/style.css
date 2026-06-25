@@ -927,8 +927,18 @@ details > summary::-webkit-details-marker { display: none; }
   line-height: 1.5;
 }
 
+.history-item-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.history-item-wrap:hover .history-delete-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
 .history-item {
-  width: 100%;
+  flex: 1;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 0.875rem;
@@ -936,7 +946,6 @@ details > summary::-webkit-details-marker { display: none; }
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
-  margin-bottom: 0.25rem;
   font-family: inherit;
 }
 .history-item:hover {
@@ -946,6 +955,27 @@ details > summary::-webkit-details-marker { display: none; }
 .history-item.active {
   background: var(--accent-primary-soft);
   border-color: rgba(124,58,237,0.2);
+}
+.history-delete-btn {
+  flex-shrink: 0;
+  margin-left: 4px;
+  padding: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.history-delete-btn:hover {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.3);
+  color: #ef4444;
 }
 
 .hi-company {
