@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SEO Keyword Research</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>SEO Keyword Research</h1>
+
+    <form action="/generate-report" method="post">
+
+        <label>Website URL</label>
+        <input
+            type="text"
+            name="website_url"
+            placeholder="https://example.com"
+            required
+        >
+
+        <label>Country</label>
+        <select name="country">
+            <option value="in">India</option>
+            <option value="us">United States</option>
+            <option value="gb">United Kingdom</option>
+            <option value="au">Australia</option>
+            <option value="ca">Canada</option>
+        </select>
+
+        <button type="submit">Generate SEO Report</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

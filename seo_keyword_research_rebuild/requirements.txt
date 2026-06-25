@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+requests
+beautifulsoup4
+lxml
+pandas
+openpyxl
+python-dotenv
+aiofiles

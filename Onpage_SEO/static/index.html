@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Workbook Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --text-primary: #1E1B4B;
+      --text-secondary: #475569;
+      --text-muted: #9CA3AF;
+      --surface-base: #FFFFFF;
+      --surface-card: rgba(255,255,255,0.85);
+      --surface-card-elevated: rgba(255,255,255,0.95);
+      --surface-input: #FFFFFF;
+      --surface-hover: rgba(0,0,0,0.04);
+      --border-subtle: rgba(0,0,0,0.06);
+      --border-default: rgba(0,0,0,0.10);
+      --border-input: #E5E7EB;
+      --accent-primary: #7C3AED;
+      --accent-primary-soft: rgba(124,58,237,0.08);
+      --accent-section: #7C3AED;
+      --status-success: #10B981;
+      --status-warning: #F59E0B;
+      --status-danger: #DC2626;
+      --status-info: #0EA5E9;
+    }
+
+    [data-theme="dark"] {
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --surface-base: #0F172A;
+      --surface-card: rgba(30,41,59,0.85);
+      --surface-card-elevated: rgba(51,65,85,0.95);
+      --surface-input: rgba(15,23,42,0.6);
+      --surface-hover: rgba(255,255,255,0.06);
+      --border-subtle: rgba(255,255,255,0.08);
+      --border-default: rgba(255,255,255,0.14);
+      --border-input: rgba(255,255,255,0.16);
+      --accent-primary-soft: rgba(165,180,252,0.12);
+      --accent-section: #A5B4FC;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: var(--surface-base);
+      color: var(--text-primary);
+    }
+
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      filter: blur(80px);
+      background:
+        radial-gradient(circle at 20% 20%, #e0e7ff 0%, transparent 40%),
+        radial-gradient(circle at 80% 10%, #fae8ff 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #f1f5f9 0%, transparent 100%),
+        radial-gradient(circle at 10% 80%, #dcfce7 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, #fef9c3 0%, transparent 40%);
+    }
+
+    [data-theme="dark"] .atmosphere {
+      background:
+        radial-gradient(circle at 20% 20%, #1e1b4b 0%, transparent 40%),
+        radial-gradient(circle at 80% 10%, #3b0764 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #0f172a 0%, transparent 100%),
+        radial-gradient(circle at 10% 80%, #064e3b 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, #1c1917 0%, transparent 40%);
+    }
+
+    .app-outer {
+      min-height: 100vh;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      width: 100%;
+      max-width: 1200px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--surface-card);
+      backdrop-filter: blur(40px) saturate(160%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+
+    .logo-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 0.875rem;
+      background: linear-gradient(135deg, #6366F1, #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.30);
+    }
+
+    .topbar-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .topbar-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 1px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 9999px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .theme-toggle:hover { background: var(--surface-card-elevated); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.875rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      background: rgba(16,185,129,0.10);
+      color: #059669;
+      border: 1px solid rgba(16,185,129,0.20);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+    }
+
+    /* MAIN LAYOUT */
+    .main-content {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* GLASS CARD */
+    .glass-card {
+      background: var(--surface-card);
+      backdrop-filter: blur(16px) saturate(140%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    /* INPUT PANEL */
+    .input-panel {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: sticky;
+      top: 1rem;
+    }
+
+    .panel-eyebrow {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-section);
+    }
+
+    .panel-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-top: 0.25rem;
+    }
+
+    .panel-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-top: 0.25rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .glass-input {
+      background: var(--surface-input);
+      border: 1.5px solid var(--border-input);
+      border-radius: 0.875rem;
+      padding: 0.65rem 0.875rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .glass-input::placeholder { color: var(--text-muted); }
+
+    .glass-input:focus {
+      border-color: #6366F1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    .pages-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .pages-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .pages-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      min-width: 24px;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: #7C3AED;
+      cursor: pointer;
+    }
+
+    .btn-brand {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.875rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #7C3AED, #4F46E5);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(124,58,237,0.32);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+
+    .btn-brand:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(124,58,237,0.42);
+    }
+
+    .btn-brand:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* AGENT STEPS */
+    .steps-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.625rem;
+      transition: background 0.15s;
+    }
+
+    .step-item.active { background: var(--accent-primary-soft); }
+
+    .step-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--border-subtle);
+      color: var(--text-muted);
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .step-item.done .step-icon {
+      background: rgba(16,185,129,0.15);
+      color: #10B981;
+    }
+
+    .step-item.active .step-icon {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    .step-item.spinning .step-icon {
+      background: var(--accent-primary);
+      color: #fff;
+      animation: spin 1s linear infinite;
+    }
+
+    .step-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .step-item.active .step-name,
+    .step-item.done .step-name { color: var(--text-primary); font-weight: 600; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* RESULTS PANEL */
+    .results-panel { padding: 1.5rem; min-height: 500px; }
+
+    .results-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 1.25rem;
+      background: var(--accent-primary-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .empty-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      max-width: 260px;
+      line-height: 1.5;
+    }
+
+    /* RESULTS HEADER */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .results-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .results-count {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: var(--accent-primary-soft);
+      color: var(--accent-primary);
+      border: 1px solid rgba(124,58,237,0.15);
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.875rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #10B981, #059669);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+    }
+
+    /* PRODUCT CARD */
+    .product-card {
+      background: var(--surface-card-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1.25rem;
+      margin-bottom: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 16px 40px rgba(0,0,0,0.10);
+      transform: translateY(-2px);
+    }
+
+    .product-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .product-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .product-info { flex: 1; min-width: 0; }
+
+    .product-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-url {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: ui-monospace, monospace;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chevron {
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .chevron.open { transform: rotate(180deg); }
+
+    .product-card-body {
+      display: none;
+      padding: 1.25rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .product-card-body.open { display: flex; }
+
+    /* METRIC SECTIONS */
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-section);
+      margin-bottom: 0.625rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.625rem;
+    }
+
+    .metric-box {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.875rem;
+      padding: 0.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-accent {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+    }
+
+    .metric-key {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-val {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    .metric-val.big {
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+      background: var(--accent-primary-soft);
+      color: var(--accent-primary);
+      border: 1px solid rgba(124,58,237,0.12);
+    }
+
+    .tag.sky {
+      background: rgba(14,165,233,0.10);
+      color: #0EA5E9;
+      border-color: rgba(14,165,233,0.15);
+    }
+
+    .tag.green {
+      background: rgba(16,185,129,0.10);
+      color: #059669;
+      border-color: rgba(16,185,129,0.15);
+    }
+
+    .seo-block {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0.875rem;
+      padding: 0.875rem;
+    }
+
+    .seo-block-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+    }
+
+    .seo-block-val {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    .char-badge {
+      display: inline-flex;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .char-good { background: rgba(16,185,129,0.12); color: #059669; }
+    .char-warn { background: rgba(245,158,11,0.12); color: #B45309; }
+    .char-bad  { background: rgba(220,38,38,0.12);  color: #DC2626; }
+
+    .faq-item {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .faq-item:last-child { border-bottom: none; }
+
+    .faq-q {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .faq-a {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+      line-height: 1.5;
+    }
+
+    /* ERROR */
+    .error-box {
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.20);
+      border-radius: 0.875rem;
+      padding: 1rem 1.125rem;
+      color: #DC2626;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+      gap: 1.5rem;
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .spinner-ring {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 4px solid var(--border-subtle);
+      border-top-color: #7C3AED;
+      animation: spin 0.9s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .loading-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 260px;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .page-enter { animation: fadeIn 0.3s ease-out both; }
+  </style>
+</head>
+<body>
+  <div class="atmosphere"></div>
+
+  <div class="app-outer page-enter">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="logo-mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="topbar-title">SEO Workbook Agent</div>
+          <div class="topbar-sub">Onpage SEO Optimizer · Jandhyala Foods</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          Agent Running
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+          <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+      <!-- LEFT: INPUT -->
+      <div class="glass-card input-panel">
+        <div>
+          <div class="panel-eyebrow">Configure</div>
+          <div class="panel-title">Analyze Website</div>
+          <div class="panel-desc">Enter your website URL and company name to run the SEO agent across your product pages.</div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="website_url">Website URL</label>
+          <input class="glass-input" id="website_url" type="url" placeholder="https://jandhyalafoods.com" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="company_name">Company Name</label>
+          <input class="glass-input" id="company_name" type="text" placeholder="Jandhyala Foods" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Max Pages &nbsp;<span class="pages-val" id="pages-display">5</span></label>
+          <div class="pages-row">
+            <span class="pages-label">1</span>
+            <input type="range" id="max_pages" min="1" max="20" value="5" oninput="document.getElementById('pages-display').textContent=this.value" />
+            <span class="pages-label">20</span>
+          </div>
+        </div>
+
+        <button class="btn-brand" id="run-btn" onclick="runAnalysis()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Run SEO Agent
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- AGENT STEPS -->
+        <div>
+          <div class="steps-title">Agent Pipeline</div>
+          <div class="step-list" id="step-list">
+            <div class="step-item" id="step-0">
+              <div class="step-icon">1</div>
+              <span class="step-name">Discover URLs from Sitemap</span>
+            </div>
+            <div class="step-item" id="step-1">
+              <div class="step-icon">2</div>
+              <span class="step-name">Match Product Pages</span>
+            </div>
+            <div class="step-item" id="step-2">
+              <div class="step-icon">3</div>
+              <span class="step-name">Scrape Page Content</span>
+            </div>
+            <div class="step-item" id="step-3">
+              <div class="step-icon">4</div>
+              <span class="step-name">Extract Keywords</span>
+            </div>
+            <div class="step-item" id="step-4">
+              <div class="step-icon">5</div>
+              <span class="step-name">Fetch SEO Metrics</span>
+            </div>
+            <div class="step-item" id="step-5">
+              <div class="step-icon">6</div>
+              <span class="step-name">Generate AI SEO Content</span>
+            </div>
+            <div class="step-item" id="step-6">
+              <div class="step-icon">7</div>
+              <span class="step-name">Export Excel Workbook</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: RESULTS -->
+      <div class="glass-card results-panel" id="results-panel">
+
+        <!-- EMPTY STATE -->
+        <div class="results-empty" id="empty-state">
+          <div class="empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <div class="empty-title">No Analysis Yet</div>
+          <div class="empty-desc">Fill in the form and click "Run SEO Agent" to analyze your product pages.</div>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div class="loading-overlay" id="loading-state">
+          <div class="spinner-ring"></div>
+          <div class="loading-text" id="loading-text">Running SEO Agent...</div>
+          <div class="loading-sub" id="loading-sub">Discovering URLs and analyzing product pages. This may take a minute.</div>
+        </div>
+
+        <!-- ERROR STATE -->
+        <div id="error-state" style="display:none; padding: 1rem 0;">
+          <div class="error-box" id="error-msg"></div>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="results-content" style="display:none;">
+          <div class="results-header">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <span class="results-title">SEO Results</span>
+              <span class="results-count" id="results-count">0 pages</span>
+            </div>
+            <a id="download-btn" class="btn-download" href="#" style="display:none;" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Excel
+            </a>
+          </div>
+          <div id="results-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── THEME ──
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? '' : 'dark');
+      const icon = document.getElementById('theme-icon');
+      icon.innerHTML = isDark
+        ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+        : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    }
+
+    // ── AVATAR COLOUR ──
+    const PALETTE = ['#6366F1','#0EA5E9','#10B981','#F59E0B','#F472B6','#8B5CF6','#06B6D4','#EF4444'];
+    function avatarColor(str) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+      return PALETTE[Math.abs(h) % 8];
+    }
+
+    function initials(name) {
+      return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+
+    // ── STEPS ──
+    const STEP_LABELS = [
+      'Discovering URLs…',
+      'Matching product pages…',
+      'Scraping page content…',
+      'Extracting keywords…',
+      'Fetching SEO metrics…',
+      'Generating AI content…',
+      'Exporting Excel workbook…'
+    ];
+
+    let stepTimer = null;
+
+    function startSteps() {
+      let idx = 0;
+      clearInterval(stepTimer);
+      for (let i = 0; i < 7; i++) {
+        const el = document.getElementById('step-' + i);
+        el.className = 'step-item';
+        el.querySelector('.step-icon').textContent = i + 1;
+      }
+      stepTimer = setInterval(() => {
+        if (idx > 0) {
+          const prev = document.getElementById('step-' + (idx - 1));
+          prev.className = 'step-item done';
+          prev.querySelector('.step-icon').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        }
+        if (idx < 7) {
+          const cur = document.getElementById('step-' + idx);
+          cur.className = 'step-item spinning';
+          document.getElementById('loading-text').textContent = STEP_LABELS[idx];
+        }
+        idx++;
+        if (idx > 7) clearInterval(stepTimer);
+      }, 2200);
+    }
+
+    function finishSteps() {
+      clearInterval(stepTimer);
+      for (let i = 0; i < 7; i++) {
+        const el = document.getElementById('step-' + i);
+        el.className = 'step-item done';
+        el.querySelector('.step-icon').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      }
+    }
+
+    function resetSteps() {
+      clearInterval(stepTimer);
+      for (let i = 0; i < 7; i++) {
+        const el = document.getElementById('step-' + i);
+        el.className = 'step-item';
+        el.querySelector('.step-icon').textContent = i + 1;
+      }
+    }
+
+    // ── CHAR BADGE ──
+    function charBadge(len, min, max) {
+      const cls = len >= min && len <= max ? 'char-good' : len < min ? 'char-bad' : 'char-warn';
+      return `<span class="char-badge ${cls}">${len} chars</span>`;
+    }
+
+    // ── RENDER RESULTS ──
+    function renderResults(results, excelFile) {
+      document.getElementById('results-count').textContent = results.length + ' page' + (results.length !== 1 ? 's' : '');
+
+      if (excelFile) {
+        const dlBtn = document.getElementById('download-btn');
+        dlBtn.href = '/download-excel';
+        dlBtn.style.display = 'inline-flex';
+      }
+
+      const list = document.getElementById('results-list');
+      list.innerHTML = '';
+
+      results.forEach((item, idx) => {
+        const color = avatarColor(item.product_name || String(idx));
+        const init = initials(item.product_name || 'P');
+        const faqs = Array.isArray(item.faqs) ? item.faqs : [];
+        const h2 = Array.isArray(item.h2) ? item.h2 : [];
+        const h3 = Array.isArray(item.h3_h6) ? item.h3_h6 : [];
+        const lsi = Array.isArray(item.lsi_keywords) ? item.lsi_keywords : [];
+        const combos = Array.isArray(item.combo_keywords) ? item.combo_keywords : [];
+        const anchors = Array.isArray(item.anchor_texts) ? item.anchor_texts : [];
+        const intLinks = Array.isArray(item.internal_linking_ideas) ? item.internal_linking_ideas : [];
+        const otherAlts = Array.isArray(item.other_image_alts) ? item.other_image_alts : [];
+
+        const titleLen = (item.title || '').length;
+        const metaLen = (item.meta_description || '').length;
+        const sTitleLen = (item.suggested_title || '').length;
+        const sMetaLen = (item.suggested_meta || '').length;
+
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+          <div class="product-card-header" onclick="toggleCard(${idx})">
+            <div class="product-avatar" style="background:linear-gradient(135deg,${color},${color}CC);">${init}</div>
+            <div class="product-info">
+              <div class="product-name">${item.product_name || '—'}</div>
+              <div class="product-url">${item.url || ''}</div>
+            </div>
+            <svg class="chevron" id="chevron-${idx}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+
+          <div class="product-card-body" id="body-${idx}">
+
+            <!-- CURRENT SEO -->
+            <div>
+              <div class="section-label">Current SEO</div>
+              <div style="display:flex;flex-direction:column;gap:0.625rem;">
+                <div class="seo-block">
+                  <div class="seo-block-label">Title ${charBadge(titleLen, 50, 65)}</div>
+                  <div class="seo-block-val">${item.title || '—'}</div>
+                </div>
+                <div class="seo-block">
+                  <div class="seo-block-label">Meta Description ${charBadge(metaLen, 120, 160)}</div>
+                  <div class="seo-block-val">${item.meta_description || '—'}</div>
+                </div>
+                <div class="seo-block">
+                  <div class="seo-block-label">H1</div>
+                  <div class="seo-block-val">${item.h1 || '—'}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- KEYWORD DATA -->
+            <div>
+              <div class="section-label">Keyword Intelligence</div>
+              <div class="metrics-grid">
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#7C3AED;"></div>
+                  <div class="metric-key">Primary Keyword</div>
+                  <div class="metric-val">${item.keyword || '—'}</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#0EA5E9;"></div>
+                  <div class="metric-key">Search Volume</div>
+                  <div class="metric-val big">${item.volume || '—'}</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#10B981;"></div>
+                  <div class="metric-key">Intent</div>
+                  <div class="metric-val">${item.intent || '—'}</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#F59E0B;"></div>
+                  <div class="metric-key">Current Ranking</div>
+                  <div class="metric-val">${item.current_ranking || '—'}</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#8B5CF6;"></div>
+                  <div class="metric-key">CPC</div>
+                  <div class="metric-val">${item.cpc || '—'}</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-accent" style="background:#EF4444;"></div>
+                  <div class="metric-key">Keyword Difficulty</div>
+                  <div class="metric-val">${item.keyword_difficulty || '—'}</div>
+                </div>
+              </div>
+            </div>
+
+            ${lsi.length ? `
+            <div>
+              <div class="section-label">LSI &amp; Combo Keywords</div>
+              <div class="tags-row">${lsi.map(k => `<span class="tag">${k}</span>`).join('')}</div>
+              ${combos.length ? `<div class="tags-row" style="margin-top:0.5rem;">${combos.map(k => `<span class="tag sky">${k}</span>`).join('')}</div>` : ''}
+            </div>` : ''}
+
+            <!-- AI SUGGESTIONS -->
+            <div>
+              <div class="section-label">AI-Generated SEO Suggestions</div>
+              <div style="display:flex;flex-direction:column;gap:0.625rem;">
+                <div class="seo-block">
+                  <div class="seo-block-label">Suggested URL</div>
+                  <div class="seo-block-val" style="font-family:ui-monospace,monospace;font-size:0.82rem;">${item.suggested_url || '—'}</div>
+                </div>
+                <div class="seo-block">
+                  <div class="seo-block-label">Suggested Title ${charBadge(sTitleLen, 50, 65)}</div>
+                  <div class="seo-block-val">${item.suggested_title || '—'}</div>
+                </div>
+                <div class="seo-block">
+                  <div class="seo-block-label">Suggested Meta ${charBadge(sMetaLen, 120, 160)}</div>
+                  <div class="seo-block-val">${item.suggested_meta || '—'}</div>
+                </div>
+                ${item.h1 ? `<div class="seo-block">
+                  <div class="seo-block-label">H1</div>
+                  <div class="seo-block-val">${item.h1}</div>
+                </div>` : ''}
+                ${h2.length ? `<div class="seo-block">
+                  <div class="seo-block-label">H2 Headings</div>
+                  <div style="display:flex;flex-direction:column;gap:0.3rem;">${h2.map(h => `<div class="seo-block-val">• ${h}</div>`).join('')}</div>
+                </div>` : ''}
+                ${h3.length ? `<div class="seo-block">
+                  <div class="seo-block-label">H3–H6 Headings</div>
+                  <div style="display:flex;flex-direction:column;gap:0.3rem;">${h3.map(h => `<div class="seo-block-val">• ${h}</div>`).join('')}</div>
+                </div>` : ''}
+              </div>
+            </div>
+
+            ${item.featured_snippet ? `
+            <div>
+              <div class="section-label">Featured Snippet</div>
+              <div class="seo-block">
+                <div class="seo-block-val" style="font-style:italic;">"${item.featured_snippet}"</div>
+              </div>
+            </div>` : ''}
+
+            ${item.main_image_alt ? `
+            <div>
+              <div class="section-label">Image Alt Tags</div>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <div class="seo-block">
+                  <div class="seo-block-label">Main Image Alt</div>
+                  <div class="seo-block-val">${item.main_image_alt}</div>
+                </div>
+                ${otherAlts.length ? `<div class="seo-block">
+                  <div class="seo-block-label">Other Image Alts</div>
+                  <div style="display:flex;flex-direction:column;gap:0.3rem;">${otherAlts.map(a => `<div class="seo-block-val">• ${a}</div>`).join('')}</div>
+                </div>` : ''}
+              </div>
+            </div>` : ''}
+
+            ${anchors.length || intLinks.length ? `
+            <div>
+              <div class="section-label">Internal Linking</div>
+              ${anchors.length ? `<div class="tags-row" style="margin-bottom:0.5rem;">${anchors.map(a => `<span class="tag green">${a}</span>`).join('')}</div>` : ''}
+              ${intLinks.length ? `<div class="seo-block">
+                <div class="seo-block-label">Internal Linking Ideas</div>
+                <div style="display:flex;flex-direction:column;gap:0.3rem;">${intLinks.map(l => `<div class="seo-block-val">• ${l}</div>`).join('')}</div>
+              </div>` : ''}
+            </div>` : ''}
+
+            ${faqs.length ? `
+            <div>
+              <div class="section-label">FAQs</div>
+              <div class="seo-block">
+                ${faqs.map(f => {
+                  if (typeof f === 'object' && f !== null) {
+                    return `<div class="faq-item"><div class="faq-q">Q: ${f.question || f.q || ''}</div><div class="faq-a">${f.answer || f.a || ''}</div></div>`;
+                  }
+                  return `<div class="faq-item"><div class="faq-q">${f}</div></div>`;
+                }).join('')}
+              </div>
+            </div>` : ''}
+
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function toggleCard(idx) {
+      const body = document.getElementById('body-' + idx);
+      const chevron = document.getElementById('chevron-' + idx);
+      const open = body.classList.contains('open');
+      body.classList.toggle('open', !open);
+      chevron.classList.toggle('open', !open);
+    }
+
+    // ── RUN ANALYSIS ──
+    async function runAnalysis() {
+      const url = document.getElementById('website_url').value.trim();
+      const company = document.getElementById('company_name').value.trim();
+      const maxPages = parseInt(document.getElementById('max_pages').value);
+
+      if (!url || !company) {
+        alert('Please enter both Website URL and Company Name.');
+        return;
+      }
+
+      // UI state: loading
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('error-state').style.display = 'none';
+      document.getElementById('results-content').style.display = 'none';
+      document.getElementById('loading-state').classList.add('active');
+      document.getElementById('run-btn').disabled = true;
+      document.getElementById('loading-text').textContent = 'Starting agent…';
+      document.getElementById('loading-sub').textContent = 'Discovering URLs and analyzing product pages. This may take a minute.';
+
+      startSteps();
+
+      try {
+        const res = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ website_url: url, company_name: company, max_pages: maxPages })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || JSON.stringify(data));
+        }
+
+        finishSteps();
+
+        document.getElementById('loading-state').classList.remove('active');
+        document.getElementById('results-content').style.display = 'block';
+
+        const results = data.results || [];
+        renderResults(results, data.excel_file);
+
+      } catch (err) {
+        clearInterval(stepTimer);
+        resetSteps();
+        document.getElementById('loading-state').classList.remove('active');
+        document.getElementById('error-state').style.display = 'block';
+        document.getElementById('error-msg').textContent = 'Error: ' + err.message;
+      } finally {
+        document.getElementById('run-btn').disabled = false;
+      }
+    }
+
+    // allow Enter key in inputs
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.target.id === 'website_url' || e.target.id === 'company_name')) {
+        runAnalysis();
+      }
+    });
+  </script>
+</body>
+</html>

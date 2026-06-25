@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>
+        SEO Keyword Research Agent
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/styles.css"
+    >
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>
+        SEO Keyword Research Agent
+    </h1>
+
+    <form
+        action="/generate-report"
+        method="post"
+    >
+
+        <label>
+            Website URL
+        </label>
+
+        <input
+            type="text"
+            name="website_url"
+            placeholder="https://jandhyalafoods.in"
+            required
+        >
+
+        <label>
+            Competitor URLs
+        </label>
+
+        <textarea
+            name="competitors"
+            placeholder="https://priyafoods.com, https://sitarafoods.com"
+            required
+        ></textarea>
+
+        <button type="submit">
+            Generate SEO Report
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
