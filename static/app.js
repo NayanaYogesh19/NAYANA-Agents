@@ -562,38 +562,55 @@ function renderResolutionCards(resolutions) {
     const rec  = comm.ingovern_recommendation || res.cover_ingovern_rec || "—";
     const type = res.special_resolution ? "Special" : "Ordinary";
 
-    // Render body_paragraphs (new InGovern house style — flowing prose, no section headers)
+    // Render body_paragraphs — InGovern house style (flowing prose, no section headers)
     const renderBody = (paragraphs) => {
       if (!paragraphs || !paragraphs.length) return "";
-      return paragraphs.map((para) => {
+      let prevWasBullet = false;
+      const items = paragraphs.map((para) => {
         const t = (para || "").trim();
         if (!t) return "";
 
-        // ✓ bullet line
-        if (t.startsWith("✓") || t.startsWith("•") || t.startsWith("-")) {
+        // ✓ or • bullet line
+        if (/^[✓•\-]/.test(t)) {
           const text = t.replace(/^[✓•\-]\s*/, "");
-          return `<div style="display:flex;gap:0.5rem;margin:0 0 0.3rem;font-size:0.84rem;line-height:1.7;color:var(--text-secondary);">
-            <span style="color:var(--accent);flex-shrink:0;">✓</span>
+          const item = `<div style="display:flex;gap:0.5rem;margin:0 0 0.25rem;font-size:0.84rem;line-height:1.7;color:var(--text-secondary);">
+            <span style="color:var(--teal-500);flex-shrink:0;font-weight:700;">✓</span>
             <span>${escapeHtml(text)}</span>
           </div>`;
+          prevWasBullet = true;
+          return item;
         }
 
-        // **Bold concern paragraph** (We note that...)
+        // Add top margin after a bullet block transitions to prose
+        const spacer = prevWasBullet ? "margin-top:0.75rem;" : "";
+        prevWasBullet = false;
+
+        // **Bold concern paragraph** — "We note that..."
         if (t.startsWith("**") && t.endsWith("**")) {
           const inner = t.slice(2, -2);
-          return `<p style="margin:0.85rem 0 0.4rem;font-size:0.84rem;line-height:1.75;color:var(--text-primary);font-weight:600;">${escapeHtml(inner)}</p>`;
+          return `<p style="margin:1rem 0 0.5rem;${spacer}font-size:0.84rem;line-height:1.75;color:var(--text-primary);font-weight:600;">${escapeHtml(inner)}</p>`;
         }
 
-        // Closing recommendation sentence — render with coloured left border
-        const lc = t.toLowerCase();
-        if (lc.startsWith("we recommend shareholders")) {
-          const borderColor = rec === "AGAINST" ? "var(--rec-against)" : rec === "FOR*" ? "var(--rec-forstar)" : "var(--rec-for)";
-          return `<p style="margin:1rem 0 0;padding:0.5rem 0.75rem;border-left:3px solid ${borderColor};background:var(--bg-surface-2);font-size:0.84rem;line-height:1.7;color:var(--text-primary);font-weight:500;">${escapeHtml(t)}</p>`;
+        // Closing recommendation sentence — coloured left-border block
+        if (/^we recommend shareholders/i.test(t)) {
+          const bc = rec === "AGAINST" ? "var(--rec-against)" : rec === "FOR*" ? "var(--rec-forstar)" : "var(--rec-for)";
+          return `<p style="margin:1.1rem 0 0;padding:0.55rem 0.875rem;border-left:3px solid ${bc};background:var(--bg-surface-2);font-size:0.84rem;line-height:1.75;color:var(--text-primary);font-weight:500;">${escapeHtml(t)}</p>`;
+        }
+
+        // Section intro / context sentence before a quote (slightly muted)
+        if (t.endsWith(":") || t.endsWith("as follows:") || t.endsWith("follows:")) {
+          return `<p style="margin:0.75rem 0 0.25rem;${spacer}font-size:0.84rem;line-height:1.7;color:var(--text-secondary);font-weight:500;">${escapeHtml(t)}</p>`;
+        }
+
+        // Verbatim quoted text — rendered in italics with left indent
+        if (t.startsWith('"') || t.startsWith('“')) {
+          return `<p style="margin:0.25rem 0 0.75rem;padding:0.5rem 1rem;border-left:2px solid var(--border);font-size:0.82rem;line-height:1.8;color:var(--text-secondary);font-style:italic;">${escapeHtml(t)}</p>`;
         }
 
         // Plain paragraph
-        return `<p style="margin:0 0 0.65rem;font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`;
-      }).join("");
+        return `<p style="margin:0 0 0.6rem;${spacer}font-size:0.84rem;line-height:1.8;color:var(--text-secondary);">${escapeHtml(t)}</p>`;
+      });
+      return items.join("");
     };
 
     // Use body_paragraphs (new format) or fall back to old section fields

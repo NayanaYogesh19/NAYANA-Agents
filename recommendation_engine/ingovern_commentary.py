@@ -173,84 +173,136 @@ No markdown fences. No prose outside the JSON.
 
 # ── User template ─────────────────────────────────────────────────────────────
 
-_USER_TEMPLATE = """Write the full InGovern Vote Recommendation report for the resolution below.
-Your output must EXACTLY match the InGovern house style shown in the style examples.
+_USER_TEMPLATE = """Write the FULL InGovern Vote Recommendation for the resolution below.
+Target length: one full printed page per resolution (600–900 words of body content).
+Match the InGovern house style from the style examples EXACTLY.
 
 === NOTICE TYPE: {notice_type} ===
 {notice_type_guidance}
 
 === COMPANY: {company_name} | FINANCIAL YEAR: {financial_year} ===
 
-=== RESOLUTION DATA (resolution_text + explanation — your PRIMARY source of facts) ===
+=== RESOLUTION DATA (PRIMARY source — use every detail present) ===
 {resolution_json}
 
 === BOARD OF DIRECTORS CONTEXT ===
 {board_json}
 
 === MANAGEMENT RECOMMENDATION: {mgmt_rec} ===
-=== PRE-EXTRACTED INGOVERN RECOMMENDATION (agree or override with full reasoning) ===
+=== PRE-EXTRACTED INGOVERN RECOMMENDATION ===
 {cover_rec_hint}
 
-=== SIMILAR PAST INGOVERN RESOLUTIONS (use to calibrate recommendation) ===
+=== SIMILAR PAST INGOVERN RESOLUTIONS ===
 {precedents_json}
 
-=== REAL INGOVERN WRITING STYLE EXAMPLES — YOUR MOST IMPORTANT REFERENCE ===
-Study these verbatim excerpts from published InGovern reports. Match this EXACT tone,
-structure, and analytical depth. The body_paragraphs you write must look indistinguishable
-from these examples. Do NOT copy names, figures, or content — use your own analysis only.
+=== REAL INGOVERN WRITING STYLE EXAMPLES — MATCH THIS EXACTLY ===
 {style_examples}
 
----
-STEP 1 — EXTRACT (mentally, before writing):
-□ From resolution_text + explanation: director name, DIN, age, appointment date, qualifications,
-  remuneration components with exact amounts, auditor name & registration, audit findings,
-  related-party details, transaction value, effective date, vote type.
-□ From board_context: Chairman independence, Audit Committee members (independent?),
-  NRC members (independent?), director tenure, board seats, attendance record.
+════════════════════════════════════════════════
+MANDATORY CONTENT CHECKLIST — DO NOT SKIP ANY
+════════════════════════════════════════════════
 
-STEP 2 — ANALYSE:
-□ Board composition concerns (Chair, Audit, NRC independence).
-□ Director-specific concerns (tenure, age, remuneration structure, family links).
-□ Auditor concerns (fee escalation, subsidiary audits, qualifications).
-□ Remuneration concerns (no cap, no performance link, combined resolution).
-□ RPT concerns (value, arm's length, Reg 23 thresholds).
+ALWAYS include ALL of the following that are available in the text:
 
-STEP 3 — DERIVE recommendation: FOR / FOR* / AGAINST.
-  • ANY concern present → at minimum FOR*. Be strict — do not default to FOR.
-  • Material non-compliance or serious governance failure → AGAINST.
+① OPENING (1-2 sentences):
+   State exactly what the company is proposing and cite the legal authority
+   (Section/Regulation number) if mentioned in the text.
 
-STEP 4 — WRITE body_paragraphs following InGovern house style EXACTLY:
-  • NO section headers of any kind.
-  • Opening: what the company proposes + legal basis (cite Section/Reg numbers from text).
-  • Facts: ✓ bullet lines for each discrete director/auditor/transaction fact.
-  • Remuneration: bullet lines listing each component with exact amounts.
-  • Auditor Other Matters or quoted policy: reproduce verbatim in quotes with context sentence.
-  • Governance concerns: **bold paragraph** starting "We note that..." — one per concern.
-  • Closing sentence (plain, not bold): "We recommend shareholders [raise the above
-    concerns and seek clarification while voting FOR / vote FOR / vote AGAINST] this resolution."
+② PROPOSAL DETAILS (2-4 ✓ bullet lines):
+   Each specific proposal item as its own bullet.
+   e.g., "✓ The Board proposes adoption of audited standalone financial statements..."
+         "✓ The Board also proposes adoption of audited consolidated financial statements..."
 
-Return ONLY this JSON (no markdown fences, no text outside JSON):
+③ AUDITOR DETAILS (for financial statement / auditor resolutions — 3-6 ✓ bullets):
+   ✓ Statutory auditor name and firm registration number
+   ✓ Appointment AGM and term end AGM
+   ✓ Audit fee for current year vs prior year (list each line item: Statutory Audit,
+     Tax Matters, Certification, Expenses, Total)
+   ✓ Secretarial auditor name and Certificate of Practice number
+   ✓ Whether secretarial audit report has any qualification, reservation, or adverse remark
+   ✓ Whether statutory audit report has any qualification, reservation, or adverse remark
+
+④ VERBATIM QUOTES from the notice (if present):
+   If the notice contains "Other Matters" in the audit report, or quotes a policy,
+   or states the NRC/Board rationale — reproduce the key passage verbatim in quotes.
+   Introduce it with a plain sentence. This is mandatory whenever such text exists.
+
+⑤ DIRECTOR PROFILE (for director appointment/reappointment resolutions — 5-8 ✓ bullets):
+   ✓ Full name, age, designation, DIN (if stated)
+   ✓ Date of first appointment to board
+   ✓ Current tenure in years
+   ✓ Qualifications (each qualification as a separate bullet)
+   ✓ Professional background / career history (2-3 sentences)
+   ✓ Current committee memberships (from board_context)
+   ✓ Board attendance: meetings held vs attended vs percentage
+   ✓ Family relationships with other board members (if stated)
+   ✓ Other listed company directorships count
+
+⑥ REMUNERATION DETAILS (for director/MD/remuneration resolutions):
+   State the total remuneration and then bullet each component:
+   "The breakup of remuneration for FY [year] is as follows:"
+   ✓ Sitting Fees: Rs. X
+   ✓ Commission: Rs. Y
+   ✓ Perquisites/Retiral benefits: Rs. Z
+   ✓ Total: Rs. [Total]
+   Then state whether this is in line with company NED policy or not.
+
+⑦ BOARD COMPOSITION ANALYSIS (always — 1-2 paragraphs, not bullets):
+   Check from board_context and state findings:
+   - Chairman independence status
+   - Audit Committee composition — any non-independent member → flag
+   - NRC composition — any non-independent/promoter member → flag
+   - Any Independent Director with >10 years tenure
+   - Any director on >7 listed boards
+   Write these as plain analytical sentences (not bullets).
+
+⑧ GOVERNANCE CONCERNS (bold paragraphs — one per concern):
+   Each concern MUST:
+   - Start with "**We note that..."
+   - Name the specific director/person/fact from the text
+   - Cite the specific Regulation/Section being violated
+   - State the precise governance implication
+   - End with what shareholders should ask
+   Example: "**We note that [Name], a Non-Executive Non-Independent Director and Promoter,
+   is a member of the Audit Committee. Regulation 18(1)(c) of SEBI LODR mandates that the
+   Audit Committee shall comprise only of Independent Directors. We recommend shareholders
+   raise this concern with the Board.**"
+
+⑨ CLOSING SENTENCE (plain text, not bold — mandatory):
+   FOR:    "Given [brief positive reason], we recommend shareholders vote FOR this resolution."
+   FOR*:   "We recommend shareholders raise the above concerns and seek clarification from
+            the board. However, since [brief reason], we recommend shareholders vote FOR
+            this resolution."
+   AGAINST:"We recommend shareholders vote AGAINST this resolution."
+
+════════════════════════════════════════════════
+BODY LENGTH REQUIREMENT
+════════════════════════════════════════════════
+Your body_paragraphs array MUST contain at minimum:
+- Financial statement resolutions: 12-18 items (opening + proposal bullets + auditor
+  details + verbatim quote + board analysis + concerns + closing)
+- Director appointment resolutions: 14-20 items (opening + director profile bullets +
+  remuneration table + board analysis + concerns + closing)
+- Remuneration/RPT resolutions: 12-16 items with full detail
+- Simple/routine resolutions (cost auditor, dividend): 8-12 items minimum
+
+If you produce fewer than 8 body_paragraphs items, you have not written enough.
+
+Return ONLY this JSON (no markdown fences, no text outside the JSON object):
 {{
-  "resolution_number":           {res_no},
-  "resolution_title":            "<exact title from the notice>",
-  "resolution_type":             "<Ordinary|Special>",
-  "management_recommendation":   "<FOR|AGAINST|ABSTAIN>",
-  "ingovern_recommendation":     "<FOR|FOR*|AGAINST>",
-  "confidence":                  "<High|Medium|Low>",
+  "resolution_number":         {res_no},
+  "resolution_title":          "<exact title from the notice>",
+  "resolution_type":           "<Ordinary|Special>",
+  "management_recommendation": "<FOR|AGAINST|ABSTAIN>",
+  "ingovern_recommendation":   "<FOR|FOR*|AGAINST>",
+  "confidence":                "<High|Medium|Low>",
   "body_paragraphs": [
-    "<Opening sentence(s): proposal summary + legal basis>",
-    "✓ <Fact 1 about director/auditor/transaction>",
-    "✓ <Fact 2>",
-    "✓ <Fact 3 — add as many ✓ lines as facts available>",
-    "<Context sentence before a quote, if any>",
-    "<Verbatim quoted text from notice, if any>",
-    "**We note that <governance concern 1 with specific textual reference>.**",
-    "**We note that <governance concern 2, if any>.**",
-    "<Closing sentence: We recommend shareholders [raise concerns while voting FOR / vote FOR / vote AGAINST] this resolution.>"
+    "<item 1>",
+    "<item 2 — add AS MANY items as needed to meet the length requirement>",
+    "..."
   ],
   "governance_concerns": [
-    "<Reg/Section cited> — <one-line summary of concern 1>",
-    "<Reg/Section cited> — <one-line summary of concern 2>"
+    "<Regulation/Section — one-line concern summary>"
   ],
   "closing_recommendation": "We recommend shareholders vote <FOR|FOR*|AGAINST> the resolution on <subject> of {company_name}.",
   "key_facts": {{
@@ -260,10 +312,10 @@ Return ONLY this JSON (no markdown fences, no text outside JSON):
     "tenure":            "<from text or empty>",
     "qualifications":    "<from text or empty>",
     "auditor":           "<from text or empty>",
-    "remuneration":      "<total remuneration from text or empty>",
+    "remuneration":      "<total from text or empty>",
     "shareholding":      "<from text or empty>",
     "related_party":     "<from text or empty>",
-    "board_seats":       "<number of listed co. board seats or empty>",
+    "board_seats":       "<count or empty>",
     "transaction_value": "<from text or empty>"
   }},
   "ai_powered": true
@@ -290,7 +342,7 @@ def _call_openrouter(prompt: str) -> dict:
             {"role": "user",   "content": prompt},
         ],
         "temperature": 0.1,
-        "max_tokens":  6000,
+        "max_tokens":  8000,
     }
 
     r = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=None)
