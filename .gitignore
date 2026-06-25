@@ -1,85 +1,67 @@
-# Credentials & secrets
-ga4/token.json
-credentials.json
-token.json
+﻿# ── Credentials & Secrets (NEVER commit these) ──────────────
 .env
 .env.*
-!example.env
+*.env
+!.env.example
 
-# Python
+# Google OAuth tokens (written at runtime)
+token.json
+tokens.json
+*_token.json
+credentials.json
+client_secret*.json
+service_account*.json
+*.pem
+*.p12
+*.pfx
+*.key
+
+# ── Python ───────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-ENV/
-
-# Build files
+*.so
+*.egg
+*.egg-info/
 dist/
 build/
-*.egg-info/
+.eggs/
+*.whl
 
-# IDE
+# ── Virtual environments ─────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+
+# ── Generated output files ───────────────────────────────────
+output/
+*.pdf
+*.csv
+!data/accounts.csv
+
+# ── IDE / Editor ─────────────────────────────────────────────
 .vscode/
 .idea/
-
-# OS
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
 
-# Python
-__pycache__/
-*.py[cod]
-
-# Virtual env
-venv/
-.venv/
-
-# Secrets
-.env
-.env.*
-credentials.json
-token.json
-
-# Generated
-generated_content.pdf
-
-# IDE
-.vscode/
-.idea/
-
-
-# Python
-__pycache__/
-*.pyc
-
-# Virtual Environment
-.venv/
-venv/
-
-# Environment
-.env
-
-# Google Credentials
-credentials.json
-token.json
-token_backup.json
-
-# VS Code
-.vscode/
-
-# Logs
+# ── Logs ─────────────────────────────────────────────────────
 *.log
+logs/
 
-# OS Files
-.DS_Store
-Thumbs.db
+# ── Zip archives ─────────────────────────────────────────────
+*.zip
+*.tar.gz
+*.rar
 
-token.json
-token_backup.json
-token_bakup.json
-credentials.json
-.env
+# ── Pytest / coverage ────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/

@@ -1,0 +1,128 @@
+import os
+import json
+
+from fastapi import APIRouter
+from fastapi import Body
+
+router = APIRouter()
+
+
+@router.get("/review_report")
+async def review_report():
+
+    session_path = "storage/session.json"
+
+    if not os.path.exists(session_path):
+        return {
+            "status":  "error",
+            "message": "No active session.",
+        }
+
+    with open(session_path, "r", encoding="utf-8") as f:
+        session = json.load(f)
+
+    return {
+        "status":        "success",
+        "company_name":  session.get("company_name"),
+        "financial_year": session.get("financial_year"),
+        "report":        session.get("report",       []),
+        "resolutions":   session.get("resolutions",  []),
+    }
+
+
+@router.post("/approve_report")
+async def approve_report(
+    data: dict = Body(...)
+):
+    session_path = "storage/session.json"
+
+    if not os.path.exists(session_path):
+        return {"status": "error"}
+
+    with open(session_path, "r", encoding="utf-8") as f:
+        session = json.load(f)
+
+    session["approved_by"] = data.get("approved_by")
+    session["comments"]    = data.get("comments")
+    session["status"]      = "approved"
+
+    # ── Local JSON backup (always) ────────────────────────────────────────
+    folder = "storage/approved"
+    os.makedirs(folder, exist_ok=True)
+
+    filename = (
+        session["company_name"]
+        + "_"
+        + session["financial_year"]
+        + "_approved.json"
+    )
+    filepath = os.path.join(folder, filename)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(session, f, indent=4)
+
+    # Update live session file too
+    with open(session_path, "w", encoding="utf-8") as f:
+        json.dump(session, f, indent=4)
+
+    # ── Supabase sync (Phase 12 — graceful degradation) ──────────────────
+    supabase_synced = False
+    supabase_error  = None
+
+    try:
+        from database.save_company     import save_company
+        from database.save_report      import save_report
+        from database.save_resolution  import save_resolution
+
+        company_id = save_company(
+            company_name   = session["company_name"],
+            financial_year = session["financial_year"],
+        )
+
+        if company_id:
+            report_id = save_report(
+                company_id  = company_id,
+                status      = "approved",
+                approved_by = session.get("approved_by", ""),
+                comments    = session.get("comments", ""),
+                report_json = session.get("report", []),
+            )
+
+            if report_id:
+                for r in session.get("resolutions", []):
+                    rec_obj = r.get("recommendation", {})
+                    rec_val  = rec_obj.get("recommendation", "") if isinstance(rec_obj, dict) else ""
+                    conf_val = rec_obj.get("confidence",    "") if isinstance(rec_obj, dict) else ""
+
+                    save_resolution(
+                        report_id         = report_id,
+                        resolution_number = r.get("resolution_number", 0),
+                        resolution_type   = r.get("resolution_type", ""),
+                        recommendation    = rec_val,
+                        confidence        = conf_val,
+                        governance_json   = {
+                            "title":               r.get("title", ""),
+                            "ordinary_resolution": r.get("ordinary_resolution", False),
+                            "special_resolution":  r.get("special_resolution",  False),
+                            "director_name":       r.get("director_name", ""),
+                            "board_recommendation":r.get("board_recommendation", ""),
+                            "annexures":           r.get("annexures", []),
+                            "governance_factors":  r.get("governance_factors", {}),
+                            "risk_flags":          r.get("risk_flags", []),
+                            "governance_evaluation": r.get("governance_evaluation", {}),
+                            "ai_analysis":         r.get("ai_analysis", {}),
+                        },
+                    )
+
+                supabase_synced = True
+
+    except Exception as exc:
+        supabase_error = str(exc)
+
+    return {
+        "status":          "approved",
+        "approved_by":     session["approved_by"],
+        "saved_as":        filename,
+        "supabase_synced": supabase_synced,
+        "supabase_error":  supabase_error,
+    }

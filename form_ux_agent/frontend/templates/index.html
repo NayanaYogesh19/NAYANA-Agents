@@ -1,0 +1,554 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form & UX Optimisation Agent · Trilliant Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/style.css?v=2"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
+</head>
+<body>
+<div class="atmosphere"></div>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon"><i class="ti ti-settings-automation"></i></span>
+      <div>
+        <div class="logo-title">Form &amp; UX Optimisation Agent</div>
+        <div class="logo-sub">Trilliant Digital · AI-Powered CRO</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="ga4-status-badge" class="ga4-status-badge" onclick="checkGa4Status()" title="Click to refresh GA4 connection status">
+        <i class="ti ti-brand-google-analytics"></i>
+        <span id="ga4-status-text">GA4: Checking…</span>
+      </div>
+      <button class="ga4-connect-btn" id="ga4-connect-btn" onclick="connectGA4()" style="display:none">
+        <i class="ti ti-plug"></i> Connect GA4
+      </button>
+      <div class="header-badge">v1.0 MVP</div>
+      <button class="theme-toggle" id="theme-toggle-btn" title="Toggle dark mode" onclick="toggleTheme()">
+        <i class="ti ti-moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+async function checkGa4Status() {
+  try {
+    const res = await fetch('/auth/google/status');
+    const data = await res.json();
+    const badge = document.getElementById('ga4-status-badge');
+    const text = document.getElementById('ga4-status-text');
+    const btn = document.getElementById('ga4-connect-btn');
+    if (data.connected) {
+      badge.className = 'ga4-status-badge connected';
+      text.textContent = 'GA4: Connected';
+      btn.style.display = 'none';
+    } else {
+      badge.className = 'ga4-status-badge disconnected';
+      text.textContent = 'GA4: Not Connected';
+      btn.style.display = 'flex';
+    }
+  } catch(e) {
+    document.getElementById('ga4-status-text').textContent = 'GA4: Unknown';
+  }
+}
+
+async function connectGA4() {
+  try {
+    const res = await fetch('/auth/google');
+    const data = await res.json();
+    if (data.auth_url) {
+      window.open(data.auth_url, '_blank', 'width=500,height=600');
+      // Re-check status after 5 seconds
+      setTimeout(checkGa4Status, 5000);
+    }
+  } catch(e) {
+    alert('Could not start GA4 connection. Check server is running.');
+  }
+}
+
+// Check on page load
+document.addEventListener('DOMContentLoaded', checkGa4Status);
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const icon = document.getElementById('theme-icon');
+  if (html.getAttribute('data-theme') === 'dark') {
+    html.setAttribute('data-theme', 'light');
+    icon.className = 'ti ti-moon';
+    localStorage.setItem('theme', 'light');
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    icon.className = 'ti ti-sun';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.addEventListener('DOMContentLoaded', function() {
+      const icon = document.getElementById('theme-icon');
+      if (icon) icon.className = 'ti ti-sun';
+    });
+  }
+})();
+</script>
+
+<main class="main">
+
+  <!-- ── Step 1: Account Selection ──────────────────────── -->
+  <section class="card" id="step-account">
+    <div class="step-label">Step 1 — Select Account</div>
+    <p class="step-desc">All accounts are loaded from the registered accounts spreadsheet. URL validation is automatic.</p>
+    <div class="field-group">
+      <label>Account Name</label>
+      <select id="account-select" onchange="onAccountChange()">
+        <option value="">— Loading accounts… —</option>
+      </select>
+    </div>
+    <div id="account-info" class="account-info" style="display:none">
+      <div class="info-row"><span class="info-lbl">Account ID</span><span id="info-id"></span></div>
+      <div class="info-row"><span class="info-lbl">GA4 Property ID</span><span id="info-ga4"></span></div>
+      <div class="info-row"><span class="info-lbl">Website URL</span><span id="info-url"></span></div>
+    </div>
+  </section>
+
+  <!-- ── Step 2: Channel ────────────────────────────────── -->
+  <section class="card" id="step-channel">
+    <div class="step-label">Step 2 — Choose Channel</div>
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btn-website" onclick="setChannel('website')">
+        <i class="ti ti-world"></i> Website
+      </button>
+      <button class="toggle-btn" id="btn-ads" onclick="setChannel('ads')">
+        <i class="ti ti-speakerphone"></i> Paid Ads
+      </button>
+    </div>
+  </section>
+
+  <!-- ── WEBSITE PATH ───────────────────────────────────── -->
+  <div id="path-website">
+
+    <!-- Step 3a: Mode -->
+    <section class="card" id="step-mode">
+      <div class="step-label">Step 3 — What do you want to do?</div>
+      <div class="mode-grid">
+        <div class="mode-card" id="mc-optimise" onclick="setMode('optimise')">
+          <i class="ti ti-refresh mode-icon"></i>
+          <div class="mode-title">Optimise existing form</div>
+          <div class="mode-sub">Scan your website, pick a form, and get full UX improvement recommendations</div>
+        </div>
+        <div class="mode-card" id="mc-create" onclick="setMode('create')">
+          <i class="ti ti-plus mode-icon"></i>
+          <div class="mode-title">Create new form</div>
+          <div class="mode-sub">Agent analyses your site and recommends the best form structure to build</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 4a: Inputs (hidden until mode is chosen) -->
+    <section class="card" id="step-inputs" style="display:none">
+      <div class="step-label">Step 4 — Analysis Inputs</div>
+
+      <!-- Form discovery panel (optimise mode only) -->
+      <div id="form-discovery-panel" style="display:none">
+        <div class="field-group full">
+          <label>Website URL to Scan <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <input type="url" id="scan-url" placeholder="https://yoursite.com" style="flex:1" />
+            <button class="scan-btn" onclick="discoverForms()">
+              <i class="ti ti-search"></i> Scan for Forms
+            </button>
+          </div>
+          <div class="hint">Enter your website URL and click Scan — the agent will find all forms on that page.</div>
+        </div>
+        <div id="discovered-forms-section" style="display:none;margin-top:12px">
+          <label style="font-weight:600;font-size:13px">Forms Found on this Page — Select one to analyse:</label>
+          <div id="discovered-forms-list" class="discovered-forms-grid" style="margin-top:8px"></div>
+        </div>
+        <input type="hidden" id="form-url" />
+      </div>
+
+      <!-- Create mode URL field -->
+      <div id="create-url-panel" style="display:none">
+        <div class="field-group full">
+          <label>Website URL <span class="req">*</span></label>
+          <input type="url" id="create-url" placeholder="https://yoursite.com" />
+          <div class="hint">Enter any page of your registered website. The agent will recommend the best form structure.</div>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:16px">
+        <div class="field-group">
+          <label>Business Goal <span class="req">*</span></label>
+          <select id="biz-goal">
+            <option value="">— Select a goal —</option>
+            <option>Lead Generation</option>
+            <option>Demo Booking</option>
+            <option>Free Trial Signup</option>
+            <option>Newsletter Signup</option>
+            <option>Product Purchase</option>
+            <option>Contact Request</option>
+            <option>Quote Request</option>
+            <option>Event Registration</option>
+            <option>Consultation Booking</option>
+            <option>Whitepaper / Resource Download</option>
+            <option>Job Application</option>
+            <option>Membership Signup</option>
+            <option>Feedback / Survey</option>
+            <option>Appointment Booking</option>
+            <option>Partnership Enquiry</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Audience Type <span class="req">*</span></label>
+          <select id="audience" onchange="onAudienceChange()">
+            <option value="">— Select audience —</option>
+            <option value="b2b">B2B — Business clients</option>
+            <option value="b2c">B2C — Consumer clients</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Device Priority <span class="req">*</span></label>
+          <select id="device">
+            <option value="">— Select device —</option>
+            <option value="both">Both (mobile + desktop)</option>
+            <option value="mobile">Mobile first</option>
+            <option value="desktop">Desktop first</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>GA4 Property ID <span class="opt">(optional — auto-filled)</span></label>
+          <input type="text" id="ga4-id" placeholder="e.g. 123456789" />
+        </div>
+      </div>
+
+      <!-- Description box -->
+      <div class="field-group full" style="margin-top:14px">
+        <label>Form Requirements Description <span class="opt">(optional but recommended)</span></label>
+        <textarea id="website-description" rows="4" placeholder="Describe what you want the form to include — e.g. 'The form should capture company name, budget range, project type and urgency. It should feel professional and trustworthy for enterprise clients. Include GDPR consent and a strong CTA focused on booking a call.'"></textarea>
+        <div class="hint">The more detail you provide, the more tailored the AI output will be. Include field preferences, tone, specific requirements, what happens after submission, etc.</div>
+      </div>
+
+      <div id="audience-note" class="audience-note" style="display:none"></div>
+
+      <button class="run-btn" id="run-website" onclick="runWebsiteAnalysis()" style="display:none">
+        <i class="ti ti-player-play"></i> Run Form Analysis
+      </button>
+    </section>
+
+  </div>
+
+  <!-- ── PAID ADS PATH ──────────────────────────────────── -->
+  <div id="path-ads" style="display:none">
+
+    <!-- Step 3b: Platform -->
+    <section class="card">
+      <div class="step-label">Step 3 — Select Ad Platform</div>
+      <div class="platform-grid">
+        <div class="platform-card active" id="p-meta" onclick="setPlatform('meta')">
+          <i class="ti ti-brand-meta platform-icon"></i>
+          <div class="platform-name">Meta Ads</div>
+          <div class="platform-sub">Facebook &amp; Instagram instant forms</div>
+          <div class="platform-badge">Available</div>
+        </div>
+        <div class="platform-card disabled" id="p-google">
+          <i class="ti ti-brand-google platform-icon"></i>
+          <div class="platform-name">Google Ads</div>
+          <div class="platform-sub">Lead form extensions</div>
+          <div class="platform-badge coming">Coming next</div>
+        </div>
+        <div class="platform-card disabled" id="p-linkedin">
+          <i class="ti ti-brand-linkedin platform-icon"></i>
+          <div class="platform-name">LinkedIn Ads</div>
+          <div class="platform-sub">Lead gen forms</div>
+          <div class="platform-badge coming">Coming next</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 4b: Meta Inputs -->
+    <section class="card" id="meta-panel">
+      <div class="step-label">Step 4 — Meta Instant Form Setup</div>
+
+      <div class="meta-info-box">
+        <i class="ti ti-wand"></i>
+        Mirror of Meta Ads Manager's "Create form" flow — fill in the same fields you see in Meta, and the AI will generate <strong>5 copy options per element</strong> ready to paste in.
+      </div>
+
+      <!-- Context fields -->
+      <div class="form-grid" style="margin-bottom:0">
+        <div class="field-group">
+          <label>Business Goal <span class="req">*</span></label>
+          <select id="meta-goal">
+            <option value="">— Select a goal —</option>
+            <option>Lead Generation</option>
+            <option>Demo Booking</option>
+            <option>Free Trial Signup</option>
+            <option>Event Registration</option>
+            <option>Whitepaper / Resource Download</option>
+            <option>Newsletter Signup</option>
+            <option>Quote Request</option>
+            <option>Consultation Booking</option>
+            <option>Product Purchase</option>
+            <option>Appointment Booking</option>
+            <option>Job Application</option>
+            <option>Membership Signup</option>
+            <option>Partnership Enquiry</option>
+            <option>Feedback / Survey</option>
+            <option>Contact Request</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Audience Type <span class="req">*</span></label>
+          <select id="meta-audience" onchange="onMetaAudienceChange()">
+            <option value="">— Select audience —</option>
+            <option value="b2c">B2C — More volume form</option>
+            <option value="b2b">B2B — Higher intent form</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description box for Meta -->
+      <div class="field-group full" style="margin-top:14px">
+        <label>Form Requirements Description <span class="opt">(optional but recommended)</span></label>
+        <textarea id="meta-description" rows="4" placeholder="Describe what you want this Meta form to achieve — e.g. 'Target decision-makers in the SaaS industry. The form should feel premium. Include a question about team size. Goal is to book a 30-min demo call. After submission, redirect to our thank-you page with a calendar link.'"></textarea>
+        <div class="hint">AI uses this alongside your selections above to generate copy that's specific to your exact campaign, product and audience.</div>
+      </div>
+
+      <!-- ── Screen 1: Form type ────────────────────────── -->
+      <div class="meta-screen-block">
+        <div class="meta-screen-label">
+          <span class="meta-screen-num">1</span>
+          <span>Form Type</span>
+        </div>
+        <p class="meta-screen-desc">Customise your form depending on the goal of your lead generation campaign.</p>
+
+        <div class="meta-radio-group" id="form-type-group">
+          <label class="meta-radio-card active" id="ft-more-volume">
+            <input type="radio" name="form_type" value="More volume" checked onchange="onFormTypeChange(this)">
+            <div class="meta-radio-content">
+              <div class="meta-radio-title">More volume</div>
+              <div class="meta-radio-sub">Use a form that's quick to fill in and submit on a mobile device.</div>
+            </div>
+          </label>
+          <label class="meta-radio-card" id="ft-higher-intent">
+            <input type="radio" name="form_type" value="Higher intent" onchange="onFormTypeChange(this)">
+            <div class="meta-radio-content">
+              <div class="meta-radio-title">Higher intent</div>
+              <div class="meta-radio-sub">Adds a review step that gives people a chance to confirm their info.</div>
+            </div>
+          </label>
+          <label class="meta-radio-card" id="ft-rich-creative">
+            <input type="radio" name="form_type" value="Rich creative" onchange="onFormTypeChange(this)">
+            <div class="meta-radio-content">
+              <div class="meta-radio-title">Rich creative</div>
+              <div class="meta-radio-sub">Hold your audience's attention with images, product detail and reviews sections.</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="meta-toggle-row" style="margin-top:14px">
+          <div>
+            <div class="meta-toggle-label">Flexible form delivery</div>
+            <div class="meta-toggle-sub">Allow Meta to adjust or remove form elements based on what people are most likely to respond to.</div>
+          </div>
+          <label class="meta-toggle-switch">
+            <input type="checkbox" id="flexible-delivery" checked>
+            <span class="meta-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── Screen 2: Intro ───────────────────────────── -->
+      <div class="meta-screen-block">
+        <div class="meta-screen-label">
+          <span class="meta-screen-num">2</span>
+          <span>Intro <span class="opt">— AI generates Headline &amp; Description (5 options each)</span></span>
+        </div>
+        <p class="meta-screen-desc">Let people know any relevant details and why they should complete your form. The agent generates all copy — nothing to type here.</p>
+        <div class="meta-ai-fills-box">
+          <i class="ti ti-sparkles"></i>
+          AI will generate 5 headline options and 5 description options based on your goal and audience.
+        </div>
+      </div>
+
+      <!-- ── Screen 3: Questions ───────────────────────── -->
+      <div class="meta-screen-block">
+        <div class="meta-screen-label">
+          <span class="meta-screen-num">3</span>
+          <span>Questions — Contact Information</span>
+        </div>
+        <p class="meta-screen-desc">Ask for contact information. These will be pre-filled from the user's Facebook profile.</p>
+
+        <div class="meta-fields-label" style="margin-bottom:8px">Choose the type of information you need:</div>
+        <div class="checkbox-grid" id="field-checkboxes">
+          <label class="cb-label"><input type="checkbox" value="Email" checked> <i class="ti ti-mail"></i> Email</label>
+          <label class="cb-label"><input type="checkbox" value="Full name" checked> <i class="ti ti-user"></i> Full name</label>
+          <label class="cb-label"><input type="checkbox" value="Phone number"> <i class="ti ti-phone"></i> Phone number</label>
+          <label class="cb-label"><input type="checkbox" value="Website"> <i class="ti ti-world"></i> Website</label>
+          <label class="cb-label"><input type="checkbox" value="Company name"> <i class="ti ti-building"></i> Company name</label>
+          <label class="cb-label"><input type="checkbox" value="Job title"> <i class="ti ti-id-badge"></i> Job title</label>
+        </div>
+        <div class="meta-ai-fills-box" style="margin-top:12px">
+          <i class="ti ti-sparkles"></i>
+          AI will generate 5 contact info description options to explain how the data will be used.
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="meta-fields-label" style="margin-bottom:8px">Custom Questions <span class="opt">(optional — AI generates if left blank)</span></div>
+          <div id="custom-questions-list"></div>
+          <button type="button" class="add-question-btn" onclick="addCustomQuestion()">
+            <i class="ti ti-plus"></i> Add question
+          </button>
+        </div>
+      </div>
+
+      <!-- Privacy Policy hidden input (AI generates it automatically) -->
+      <input type="hidden" id="meta-privacy" value="" />
+
+      <!-- ── Ending (Thank You screen) — AI fills all ── -->
+      <div class="meta-screen-block">
+        <div class="meta-screen-label">
+          <span class="meta-screen-num">4</span>
+          <span>Ending (Thank You Screen) <span class="opt">— AI generates all copy</span></span>
+        </div>
+        <p class="meta-screen-desc">Shown after the lead submits. The agent generates 5 headline, 5 description and 5 CTA button options.</p>
+        <div class="meta-ai-fills-box">
+          <i class="ti ti-sparkles"></i>
+          AI generates 5 options each for: Headline · Description · CTA button text — all tailored to your business goal.
+        </div>
+      </div>
+
+      <button class="run-btn" id="run-meta" onclick="runMetaAnalysis()">
+        <i class="ti ti-wand"></i> Generate Meta Form Spec with 5 Options Each
+      </button>
+    </section>
+
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────── -->
+  <div id="loading" class="loading-card" style="display:none">
+    <div class="spinner"></div>
+    <div class="loading-title" id="loading-title">Running analysis…</div>
+    <div class="loading-steps" id="loading-steps"></div>
+  </div>
+
+  <!-- ── Results ────────────────────────────────────────── -->
+  <div id="results" style="display:none">
+
+    <!-- Score Banner -->
+    <section class="score-banner" id="score-banner">
+      <div class="score-block">
+        <div class="score-num" id="score-num">—</div>
+        <div class="score-lbl">UX Score /100</div>
+      </div>
+      <div class="score-block">
+        <div class="score-grade" id="score-grade">—</div>
+        <div class="score-lbl">Grade</div>
+      </div>
+      <div class="score-block">
+        <div class="score-num green" id="score-lift">—</div>
+        <div class="score-lbl">Projected Lift</div>
+      </div>
+      <div class="score-block">
+        <div class="score-num" id="score-rate">—</div>
+        <div class="score-lbl">Current Conv. Rate</div>
+      </div>
+    </section>
+
+    <!-- Start Over button -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="start-over-btn" onclick="startOver()">
+        <i class="ti ti-refresh"></i> Start Over
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="result-tabs">
+      <button class="rt active" onclick="showTab('tab-diagnosis')" id="tab-diagnosis-btn">Diagnosis</button>
+      <button class="rt" onclick="showTab('tab-checks')" id="tab-checks-btn">UX Checks</button>
+      <button class="rt" onclick="showTab('tab-analytics')" id="tab-analytics-btn">Analytics</button>
+      <button class="rt" onclick="showTab('tab-blueprint')" id="tab-blueprint-btn" style="display:none">Form Blueprint</button>
+      <button class="rt" onclick="showTab('tab-meta')" id="tab-meta-btn" style="display:none">Meta Form Spec</button>
+      <button class="rt" onclick="showTab('tab-downloads')">Downloads</button>
+    </div>
+
+    <!-- Tab: Diagnosis (optimise mode) -->
+    <section class="card tab-panel" id="tab-diagnosis">
+      <div class="step-label">AI Diagnosis</div>
+      <h3 class="sub-h">Key Issues Found</h3>
+      <ul id="diagnosis-summary-list" class="result-list"></ul>
+      <h3 class="sub-h" style="margin-top:1.2rem">Root Causes Identified <span class="badge">Ranked by impact</span></h3>
+      <ul id="root-causes" class="result-list"></ul>
+      <div class="two-col" style="margin-top:1.2rem">
+        <div>
+          <h3 class="sub-h">Quick Wins <span class="badge green">Fix in &lt; 1 hour</span></h3>
+          <ul id="quick-wins" class="result-list"></ul>
+        </div>
+        <div>
+          <h3 class="sub-h">CTA Variants to A/B Test</h3>
+          <ul id="cta-variants" class="result-list cta-list"></ul>
+        </div>
+      </div>
+      <h3 class="sub-h" style="margin-top:1.4rem">UX Optimisation Plan</h3>
+      <ul id="ux-optimisation-plan" class="result-list"></ul>
+      <h3 class="sub-h" style="margin-top:1.2rem">Form Redesign Recommendations</h3>
+      <ul id="form-redesign-recommendations" class="result-list"></ul>
+      <h3 class="sub-h" style="margin-top:1.2rem">Strategic Fixes <span class="badge orange">Requires dev work</span></h3>
+      <ul id="strategic-fixes" class="result-list"></ul>
+    </section>
+
+    <!-- Tab: UX Checks -->
+    <section class="card tab-panel" id="tab-checks" style="display:none">
+      <div class="step-label">UX Rule Check Results (8 Checks)</div>
+      <div id="checks-grid" class="checks-grid"></div>
+    </section>
+
+    <!-- Tab: Analytics -->
+    <section class="card tab-panel" id="tab-analytics" style="display:none">
+      <div class="step-label">Analytics Data</div>
+      <div id="analytics-panel"></div>
+    </section>
+
+    <!-- Tab: Form Blueprint (create mode) -->
+    <section class="card tab-panel" id="tab-blueprint" style="display:none">
+      <div class="step-label">New Form Blueprint</div>
+      <div id="blueprint-panel"></div>
+    </section>
+
+    <!-- Tab: Meta Form Spec -->
+    <section class="card tab-panel" id="tab-meta" style="display:none">
+      <div class="step-label">Meta Instant Form Specification</div>
+      <div id="meta-spec-panel"></div>
+      <h3 class="sub-h" style="margin-top:1.5rem">Implementation Steps</h3>
+      <ol id="meta-steps" class="result-list"></ol>
+    </section>
+
+    <!-- Tab: Downloads -->
+    <section class="card tab-panel" id="tab-downloads" style="display:none">
+      <div class="step-label">Download Outputs</div>
+      <div class="download-grid" id="download-grid"></div>
+    </section>
+
+  </div>
+
+</main>
+
+<footer class="footer">
+  Form &amp; UX Optimisation Agent · Trilliant Digital · v1.0 MVP · 2026
+</footer>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

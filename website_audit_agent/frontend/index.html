@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Audit Strategy Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-outer">
+
+    <!-- Atmosphere background -->
+    <div class="atmosphere"></div>
+
+    <!-- Glass shell -->
+    <div class="app-shell glass-panel">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-mark">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="sidebar-item active" title="Audit">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                </div>
+                <div class="sidebar-item" title="Reports">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
+                <div class="sidebar-item" title="Analytics">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="app-content">
+
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <span class="topbar-eyebrow">SEO &amp; SMM</span>
+                    <h1 class="topbar-title">Website Audit Agent</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                        <svg id="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg id="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                    <div class="role-badge">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                        Audit Agent
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page content -->
+            <main class="app-main page-enter">
+
+                <!-- Page header -->
+                <div class="page-header">
+                    <div>
+                        <p class="section-eyebrow">Competitive Analysis</p>
+                        <h2 class="page-title">Run Website Audit</h2>
+                        <p class="page-subtitle">Analyze your site against a competitor and receive a full PDF strategy report.</p>
+                    </div>
+                    <div class="header-badges">
+                        <span class="badge badge-info">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            On-page SEO
+                        </span>
+                        <span class="badge badge-success">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Technical SEO
+                        </span>
+                        <span class="badge badge-purple">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            UX Analysis
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Main grid -->
+                <div class="audit-grid">
+
+                    <!-- Form card -->
+                    <div class="glass-card-static form-card">
+                        <div class="card-header">
+                            <div class="card-header-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                                </svg>
+                            </div>
+                            <h3 class="card-title">Audit Parameters</h3>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="target">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                Target Website URL
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-prefix">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                </span>
+                                <input
+                                    type="url"
+                                    id="target"
+                                    class="glass-input"
+                                    placeholder="https://yourwebsite.com"
+                                >
+                            </div>
+                            <span class="form-hint">The website you want to audit and improve</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="competitor">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Competitor Website URL
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-prefix">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                </span>
+                                <input
+                                    type="url"
+                                    id="competitor"
+                                    class="glass-input"
+                                    placeholder="https://competitor.com"
+                                >
+                            </div>
+                            <span class="form-hint">The benchmark site to compare against</span>
+                        </div>
+
+                        <button class="btn-brand" onclick="runAudit()" id="audit-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                            Generate Audit Report
+                        </button>
+                    </div>
+
+                    <!-- Info / status card -->
+                    <div class="side-column">
+
+                        <!-- What's included card -->
+                        <div class="glass-card-static info-card">
+                            <p class="info-card-label">What's included</p>
+                            <ul class="feature-list stagger">
+                                <li>
+                                    <span class="feature-dot" style="background:#7C3AED"></span>
+                                    <span>On-page SEO analysis &amp; recommendations</span>
+                                </li>
+                                <li>
+                                    <span class="feature-dot" style="background:#0EA5E9"></span>
+                                    <span>Technical SEO audit (speed, crawlability)</span>
+                                </li>
+                                <li>
+                                    <span class="feature-dot" style="background:#10B981"></span>
+                                    <span>Content gap &amp; keyword opportunity analysis</span>
+                                </li>
+                                <li>
+                                    <span class="feature-dot" style="background:#F59E0B"></span>
+                                    <span>UX &amp; conversion rate review</span>
+                                </li>
+                                <li>
+                                    <span class="feature-dot" style="background:#F472B6"></span>
+                                    <span>Competitor benchmarking &amp; gap scoring</span>
+                                </li>
+                                <li>
+                                    <span class="feature-dot" style="background:#6366F1"></span>
+                                    <span>Actionable PDF strategy report</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Status panel -->
+                        <div id="status" class="status-panel"></div>
+
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+</div>
+
+<script src="/static/scripts.js"></script>
+</body>
+</html>
