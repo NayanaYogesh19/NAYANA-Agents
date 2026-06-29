@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Query
 
 from recommendation_engine.ingovern_commentary import generate_ingovern_commentary
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter(tags=["Commentary"])
 
@@ -14,7 +15,7 @@ _executor = ThreadPoolExecutor(max_workers=8)
 
 
 def _load_session():
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return None, "No active session. Please upload a notice first."
     with open(session_path, "r", encoding="utf-8") as f:
@@ -22,7 +23,7 @@ def _load_session():
 
 
 def _save_session(session: dict) -> None:
-    with open("storage/session.json", "w", encoding="utf-8") as f:
+    with open(SESSION_PATH, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=4)
 
 

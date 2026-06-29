@@ -3,6 +3,7 @@ import json
 
 from fastapi import APIRouter
 from fastapi import Body
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH, STORAGE_DIR
 
 router = APIRouter()
 
@@ -10,7 +11,7 @@ router = APIRouter()
 @router.get("/review_report")
 async def review_report():
 
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
 
     if not os.path.exists(session_path):
         return {
@@ -34,7 +35,7 @@ async def review_report():
 async def approve_report(
     data: dict = Body(...)
 ):
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
 
     if not os.path.exists(session_path):
         return {"status": "error"}
@@ -47,7 +48,7 @@ async def approve_report(
     session["status"]      = "approved"
 
     # Local JSON backup (always)
-    folder = "storage/approved"
+    folder = os.path.join(STORAGE_DIR, "approved")
     os.makedirs(folder, exist_ok=True)
 
     filename = (

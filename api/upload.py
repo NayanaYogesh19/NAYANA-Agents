@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from fastapi import UploadFile
 from fastapi import File
 from fastapi import Form
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter()
 
@@ -22,7 +23,7 @@ async def upload_notice(
 
     # Create storage folder
 
-    folder = "storage/notices"
+    folder = NOTICES_DIR
 
     os.makedirs(
         folder,
@@ -63,7 +64,7 @@ async def upload_notice(
 
     with open(
 
-        "storage/session.json",
+        SESSION_PATH,
 
         "w",
 

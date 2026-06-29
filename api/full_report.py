@@ -17,10 +17,11 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from report_generator.generate_pdf import generate_pdf_report
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter(prefix="/full_report", tags=["Full Report"])
 
-REPORTS_DIR = "storage/reports"
+REPORTS_DIR = REPORTS_DIR
 
 _executor = ThreadPoolExecutor(max_workers=4)
 
@@ -31,7 +32,7 @@ async def _run_sync(fn, *args):
 
 
 def _load_session() -> tuple[dict | None, str | None]:
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return None, "No active session."
     with open(session_path, "r", encoding="utf-8") as f:
@@ -40,7 +41,7 @@ def _load_session() -> tuple[dict | None, str | None]:
 
 def _save_session(session: dict) -> None:
     os.makedirs("storage", exist_ok=True)
-    with open("storage/session.json", "w", encoding="utf-8") as f:
+    with open(SESSION_PATH, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=4, ensure_ascii=False)
 
 

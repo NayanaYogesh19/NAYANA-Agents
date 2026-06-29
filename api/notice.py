@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from pdf_processing.extract_pdf import extract_pdf_text
 from pdf_processing.extract_metadata import (
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
     extract_notice_metadata,
     extract_company_name,
     extract_isin,
@@ -30,7 +31,7 @@ async def _run_sync(fn, *args):
 
 def _load_session_and_text() -> tuple[dict | None, str | None, str | None]:
     """Load session + extract PDF text (sync, runs in thread). Returns (session, text, error_msg)."""
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return None, None, "No active session. Please upload a notice first."
     with open(session_path, "r", encoding="utf-8") as f:
@@ -58,7 +59,7 @@ async def _get_session_text():
 
 
 def _save_to_session(key: str, value) -> None:
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return
     with open(session_path, "r", encoding="utf-8") as f:

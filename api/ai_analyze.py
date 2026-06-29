@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter
 
 from recommendation_engine.ai_analyzer import analyze_resolution
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ async def analyze_governance():
     Run AI-powered governance analysis on every resolution in the current session.
     All calls run concurrently in a thread pool — never times out.
     """
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
 
     if not os.path.exists(session_path):
         return {

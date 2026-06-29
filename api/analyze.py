@@ -17,6 +17,7 @@ from report_generator.generate_report import generate_report
 from recommendation_engine.governance_factor import extract_governance_factors
 from recommendation_engine.risk_flags import detect_risks
 from recommendation_engine.evaluate import evaluate_governance
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ async def _run_sync(fn, *args):
     return await loop.run_in_executor(_executor, fn, *args)
 
 
-def _load_cached_text(pdf_path: str, session_path: str = "storage/session.json") -> str:
+def _load_cached_text(pdf_path: str, session_path: str = SESSION_PATH) -> str:
     """Return cached PDF text from session if available, else extract and cache it."""
     try:
         with open(session_path, "r", encoding="utf-8") as f:
@@ -72,7 +73,7 @@ def _extract_all_resolutions(pdf_path: str) -> tuple[list, list]:
 
 @router.get("/extract_resolutions")
 async def resolution_agent():
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
 
     if not os.path.exists(session_path):
         return {"status": "error", "message": "No active session found. Please upload a notice first."}

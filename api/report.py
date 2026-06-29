@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse, HTMLResponse
 
 from report_generator.generate_pdf import generate_pdf_report
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ async def generate_report_endpoint():
 
     Returns a downloadable file when the report is generated successfully.
     """
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
 
     if not os.path.exists(session_path):
         return {
@@ -73,7 +74,7 @@ async def download_report(filename: str):
     """
     Download a previously generated report by filename from storage/reports/.
     """
-    filepath = os.path.join("storage/reports", filename)
+    filepath = os.path.join(REPORTS_DIR, filename)
 
     if not os.path.exists(filepath):
         return {"status": "error", "message": "File not found."}

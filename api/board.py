@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from pdf_processing.extract_pdf import extract_pdf_text
 from pdf_processing.extract_board import (
+from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
     extract_board_of_directors,
     extract_attendance_table,
 )
@@ -23,7 +24,7 @@ async def _run_sync(fn, *args):
 
 def _load_pdf_text_sync() -> tuple:
     """Returns (text, pdf_path, error_msg). Blocking — call via _run_sync."""
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return None, None, "No active session. Please upload a notice first."
     with open(session_path, "r", encoding="utf-8") as f:
@@ -51,7 +52,7 @@ async def _load_pdf_text():
 
 
 def _save_to_session(key: str, value) -> None:
-    session_path = "storage/session.json"
+    session_path = SESSION_PATH
     if not os.path.exists(session_path):
         return
     with open(session_path, "r", encoding="utf-8") as f:

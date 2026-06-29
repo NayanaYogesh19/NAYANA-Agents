@@ -160,7 +160,7 @@ async def knowledge_base_stats():
     }
 
     # Local approved JSON count
-    approved_dir = "storage/approved"
+    approved_dir = os.path.join(STORAGE_DIR, "approved")
     if os.path.exists(approved_dir):
         local_files = [f for f in os.listdir(approved_dir) if f.endswith(".json")]
         stats["local_approved"] = len(local_files)
