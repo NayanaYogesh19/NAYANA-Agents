@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter
 
 from pdf_processing.extract_pdf import extract_pdf_text
-from pdf_processing.extract_metadata import (
 from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
+from pdf_processing.extract_metadata import (
     extract_notice_metadata,
     extract_company_name,
     extract_isin,
