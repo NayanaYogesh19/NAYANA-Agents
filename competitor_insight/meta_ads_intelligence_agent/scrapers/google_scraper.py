@@ -94,10 +94,16 @@ class GoogleAdsScraper:
         # GET DATASET
         # ---------------------------------------------------
 
+        dataset_id = (
+            run["defaultDatasetId"]
+            if isinstance(run, dict)
+            else run.default_dataset_id
+        )
+
         dataset_items = list(
 
             self.client.dataset(
-                run["defaultDatasetId"]
+                dataset_id
             ).iterate_items()
         )
 
