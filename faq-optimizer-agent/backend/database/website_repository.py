@@ -145,3 +145,19 @@ class WebsiteRepository:
             )
 
             return None
+
+    # =================================================
+    # GET ALL WEBSITES
+    # =================================================
+    def get_all_websites(self):
+        try:
+            response = (
+                self.client
+                .table("websites")
+                .select("*")
+                .execute()
+            )
+            return response.data
+        except Exception as e:
+            logger.error(f"Get all websites error: {e}")
+            return []

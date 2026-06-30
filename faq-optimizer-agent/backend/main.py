@@ -21,6 +21,10 @@ from backend.routes.topics import (
     router as topics_router
 )
 
+from backend.routes.admin import (
+    router as admin_router
+)
+
 import logging
 import sys
 
@@ -111,6 +115,11 @@ app.include_router(
 
 app.include_router(
     topics_router,
+    prefix="/api"
+)
+
+app.include_router(
+    admin_router,
     prefix="/api"
 )
 
@@ -278,6 +287,50 @@ for API documentation
 
         logger.error(
             f"Error serving root: {str(e)}"
+        )
+
+        return HTMLResponse(
+
+            content=f"<h1>Error: {str(e)}</h1>",
+
+            status_code=500
+        )
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard():
+
+    try:
+
+        html_file = (
+            frontend_path / "admin.html"
+        )
+
+        if html_file.exists():
+
+            with open(
+                html_file,
+                'r',
+                encoding='utf-8'
+            ) as f:
+
+                content = f.read()
+
+            return HTMLResponse(
+                content=content
+            )
+
+        else:
+
+            return HTMLResponse(
+                content="<h1>Admin dashboard not found</h1>",
+                status_code=404
+            )
+
+    except Exception as e:
+
+        logger.error(
+            f"Error serving admin: {str(e)}"
         )
 
         return HTMLResponse(

@@ -116,6 +116,11 @@ class Settings(BaseSettings):
         ).lower() == "true"
     )
 
+    admin_password: str = os.getenv(
+        "ADMIN_PASSWORD",
+        "admin"
+    )
+
     # =================================================
     # PYDANTIC CONFIG
     # =================================================

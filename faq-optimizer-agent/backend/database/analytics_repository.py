@@ -54,3 +54,50 @@ class AnalyticsRepository:
         except Exception as e:
             logger.error(f"Error getting category performance: {str(e)}")
             return []
+
+    def get_overall_analytics(self):
+        """Get overall analytics summary"""
+        try:
+            # Get total websites
+            websites_response = self.client.table("websites").select("*").execute()
+            total_websites = len(websites_response.data)
+
+            # Get total FAQs and sum impressions/clicks across all websites
+            total_faqs = 0
+            total_impressions = 0
+            total_clicks = 0
+
+            for website in websites_response.data:
+                table_name = website.get("table_name")
+                if table_name:
+                    try:
+                        faqs_response = self.client.table(table_name).select("*").execute()
+                        total_faqs += len(faqs_response.data)
+                        for faq in faqs_response.data:
+                            total_impressions += faq.get("impressions", 0)
+                            total_clicks += faq.get("clicks", 0)
+                    except Exception as e:
+                        logger.warning(f"Could not fetch from {table_name}: {str(e)}")
+                        continue
+
+            # Calculate average CTR
+            avg_ctr = 0.0
+            if total_impressions > 0:
+                avg_ctr = (total_clicks / total_impressions) * 100
+
+            return {
+                "total_websites": total_websites,
+                "total_faqs": total_faqs,
+                "total_impressions": total_impressions,
+                "total_clicks": total_clicks,
+                "avg_ctr": round(avg_ctr, 2)
+            }
+        except Exception as e:
+            logger.error(f"Error getting overall analytics: {str(e)}")
+            return {
+                "total_websites": 0,
+                "total_faqs": 0,
+                "total_impressions": 0,
+                "total_clicks": 0,
+                "avg_ctr": 0.0
+            }

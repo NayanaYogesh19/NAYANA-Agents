@@ -27,7 +27,7 @@ class WebScraper:
             logger.info(f"Scraping website: {url}")
             
             # Make request to the website
-            response = requests.get(url, headers=self.headers, timeout=10)
+            response = requests.get(url, headers=self.headers, timeout=30)
             response.raise_for_status()
             
             # Parse HTML content

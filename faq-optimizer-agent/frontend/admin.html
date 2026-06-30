@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Optimizer - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .login-section {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 400px;
+            margin: 100px auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .login-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .dashboard-section {
+            display: none;
+        }
+
+        .dashboard-section.active {
+            display: block;
+        }
+
+        .analytics-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .websites-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .websites-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .website-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .website-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .website-item h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .website-item p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .faqs-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .faqs-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .faq-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .faq-item .question {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .faq-item .answer {
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .faq-item .meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+
+        .back-btn {
+            background: #e0e0e0;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #d0d0d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 FAQ Optimizer Admin</h1>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section">
+            <h2>Admin Login</h2>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter admin password">
+            </div>
+            <button class="btn btn-primary" onclick="login()">Login</button>
+            <div id="loginError" class="error" style="display: none;"></div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="dashboard-section">
+            <div class="analytics-cards">
+                <div class="card">
+                    <h3>Total Websites</h3>
+                    <div class="value" id="totalWebsites">0</div>
+                </div>
+                <div class="card">
+                    <h3>Total FAQs</h3>
+                    <div class="value" id="totalFaqs">0</div>
+                </div>
+                <div class="card">
+                    <h3>Total Impressions</h3>
+                    <div class="value" id="totalImpressions">0</div>
+                </div>
+                <div class="card">
+                    <h3>Total Clicks</h3>
+                    <div class="value" id="totalClicks">0</div>
+                </div>
+            </div>
+
+            <div class="websites-section">
+                <h2>Websites</h2>
+                <div id="websitesList"></div>
+            </div>
+
+            <div id="faqsSection" class="faqs-section" style="display: none;">
+                <button class="btn back-btn" onclick="showWebsites()">← Back to Websites</button>
+                <h2 id="websiteTitle">FAQs</h2>
+                <div id="faqsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWebsite = null;
+        let isLoggedIn = false;
+
+        // Check login state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            isLoggedIn = sessionStorage.getItem('faqAdminLoggedIn') === 'true';
+            if (isLoggedIn) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('dashboardSection').classList.add('active');
+                loadDashboard();
+            }
+        });
+
+        async function login() {
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+
+                if (response.ok) {
+                    isLoggedIn = true;
+                    sessionStorage.setItem('faqAdminLoggedIn', 'true');
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('dashboardSection').classList.add('active');
+                    loadDashboard();
+                } else {
+                    const data = await response.json();
+                    errorDiv.textContent = data.detail || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Login failed. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function loadDashboard() {
+            await Promise.all([
+                loadAnalytics(),
+                loadWebsites()
+            ]);
+        }
+
+        async function loadAnalytics() {
+            try {
+                console.log('Loading analytics...');
+                const response = await fetch('/api/admin/analytics');
+                console.log('Analytics response status:', response.status);
+                const data = await response.json();
+                console.log('Analytics data:', data);
+
+                if (data && data.analytics) {
+                    document.getElementById('totalWebsites').textContent = data.analytics.total_websites;
+                    document.getElementById('totalFaqs').textContent = data.analytics.total_faqs;
+                    document.getElementById('totalImpressions').textContent = data.analytics.total_impressions;
+                    document.getElementById('totalClicks').textContent = data.analytics.total_clicks;
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        async function loadWebsites() {
+            try {
+                console.log('Loading websites...');
+                const response = await fetch('/api/admin/websites');
+                console.log('Websites response status:', response.status);
+                const data = await response.json();
+                console.log('Websites data:', data);
+
+                const listDiv = document.getElementById('websitesList');
+                listDiv.innerHTML = '';
+
+                if (data.websites.length === 0) {
+                    listDiv.innerHTML = '<p>No websites yet.</p>';
+                    return;
+                }
+
+                data.websites.forEach(website => {
+                    const div = document.createElement('div');
+                    div.className = 'website-item';
+                    div.onclick = () => loadFaqs(website.website_url);
+                    div.innerHTML = `
+                        <h3>${website.website_name}</h3>
+                        <p>${website.website_url}</p>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error loading websites:', error);
+            }
+        }
+
+        async function loadFaqs(websiteUrl) {
+            currentWebsite = websiteUrl;
+            try {
+                const response = await fetch(`/api/admin/faqs/${encodeURIComponent(websiteUrl)}`);
+                const data = await response.json();
+
+                document.getElementById('websitesSection').style.display = 'none';
+                document.getElementById('faqsSection').style.display = 'block';
+                document.getElementById('websiteTitle').textContent = `FAQs for ${websiteUrl}`;
+
+                const listDiv = document.getElementById('faqsList');
+                listDiv.innerHTML = '';
+
+                if (data.faqs.length === 0) {
+                    listDiv.innerHTML = '<p>No FAQs yet.</p>';
+                    return;
+                }
+
+                data.faqs.forEach(faq => {
+                    const div = document.createElement('div');
+                    div.className = 'faq-item';
+                    div.innerHTML = `
+                        <div class="question">${faq.question}</div>
+                        <div class="answer">${faq.answer}</div>
+                        <div class="meta">
+                            <span>Category: ${faq.category}</span>
+                            <span>Impressions: ${faq.impressions || 0}</span>
+                            <span>Clicks: ${faq.clicks || 0}</span>
+                            <span>CTR: ${(faq.ctr || 0).toFixed(2)}%</span>
+                        </div>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error loading FAQs:', error);
+            }
+        }
+
+        function showWebsites() {
+            document.getElementById('websitesSection').style.display = 'block';
+            document.getElementById('faqsSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
