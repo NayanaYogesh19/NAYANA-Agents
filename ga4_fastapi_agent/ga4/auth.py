@@ -17,15 +17,17 @@ SCOPES = [
 
 TOKEN_FILE = "ga4/token.json"
 
-CLIENT_CONFIG = {
-    "installed": {
-        "client_id": os.environ["GA4_CLIENT_ID"],
-        "client_secret": os.environ["GA4_CLIENT_SECRET"],
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uris": ["http://localhost:8080/"]
+
+def get_client_config():
+    return {
+        "installed": {
+            "client_id": os.getenv("GA4_CLIENT_ID"),
+            "client_secret": os.getenv("GA4_CLIENT_SECRET"),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [os.getenv("GA4_REDIRECT_URI", "http://localhost:8080/")]
+        }
     }
-}
 
 
 def get_credentials():
@@ -47,14 +49,14 @@ def get_credentials():
 
         else:
 
+            client_config = get_client_config()
+            
             flow = InstalledAppFlow.from_client_config(
-                CLIENT_CONFIG,
+                client_config,
                 SCOPES
             )
 
-            creds = flow.run_local_server(
-                port=8080
-            )
+            creds = flow.run_local_server(port=0)
 
         with open(TOKEN_FILE, "w") as f:
 

@@ -258,7 +258,7 @@ function generateInputs() {
                 <input
                     id="propertyId"
                     type="text"
-                    value="343043403"
+                    value="255658156"
                 >
 
             </div>
@@ -569,14 +569,13 @@ async function runReport() {
                 }
             );
 
-        if (
-            !response.ok
-        ) {
-
-            throw new Error(
-                `HTTP Error ${response.status}`
-            );
-
+        if (!response.ok) {
+            let detail = `HTTP Error ${response.status}`;
+            try {
+                const errJson = await response.json();
+                if (errJson && errJson.detail) detail = errJson.detail;
+            } catch (_) {}
+            throw new Error(detail);
         }
 
         const data =
@@ -595,18 +594,22 @@ async function runReport() {
 
     catch (error) {
 
-        console.error(
-            error
-        );
+        console.error(error);
+
+        let errorMsg = error.message;
+
+        // Try to extract the real detail from a 500 response
+        try {
+            const errData = JSON.parse(error._body);
+            if (errData && errData.detail) errorMsg = errData.detail;
+        } catch (_) {}
 
         document.getElementById(
             "reportOutput"
         ).innerHTML = `
             <div class="report-block">
                 <h3>Error</h3>
-                <p>
-                    ${error.message}
-                </p>
+                <p>${errorMsg}</p>
             </div>
         `;
 
@@ -1477,6 +1480,21 @@ function formatValue(
     }
 
     return value;
+}
+
+
+// ==========================================
+// OBJECT RENDERER
+// ==========================================
+
+function renderObject(obj) {
+    if (!obj || typeof obj !== "object") return `<p>${obj}</p>`;
+    return Object.entries(obj).map(([k, v]) => `
+        <div class="report-row">
+            <span class="report-label">${k.replace(/_/g, " ")}:</span>
+            <span class="report-value">${v}</span>
+        </div>
+    `).join("");
 }
 
 
