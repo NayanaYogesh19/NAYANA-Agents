@@ -1,3 +1,7 @@
+import multiprocessing
+
+multiprocessing.freeze_support()
+
 from fastapi import FastAPI, Form
 
 from fastapi.responses import (
@@ -16,15 +20,6 @@ from services.journey_service import (
 from services.pdf_service import (
     generate_pdf_report
 )
-
-from tools.browser_tool import (
-    open_website
-)
-
-from tools.interaction_engine import (
-    interact_with_website
-)
-
 
 app = FastAPI()
 
@@ -198,110 +193,13 @@ def audit(
         """
 
     # =========================
-    # OPEN WEBSITE AGAIN
-    # FOR INTERACTION TRACKING
-    # =========================
-    interaction_data = open_website(
-        website_url
-    )
-
-    # =========================
-    # SAFE WEBSITE CHECK
-    # =========================
-    if not interaction_data:
-
-        return """
-
-        <html>
-
-        <head>
-
-            <title>
-                Website Error
-            </title>
-
-            <link
-                href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-                rel="stylesheet"
-            >
-
-        </head>
-
-        <body class="bg-light">
-
-            <div class="container mt-5">
-
-                <div class="alert alert-danger">
-
-                    <h2>
-                        Website Could Not Be Opened
-                    </h2>
-
-                    <hr>
-
-                    <p>
-                        Possible reasons:
-                    </p>
-
-                    <ul>
-
-                        <li>
-                            Website blocks automation
-                        </li>
-
-                        <li>
-                            Website is too slow
-                        </li>
-
-                        <li>
-                            Website is down
-                        </li>
-
-                        <li>
-                            Invalid URL
-                        </li>
-
-                    </ul>
-
-                    <a
-                        href="/"
-                        class="btn btn-primary"
-                    >
-                        Try Again
-                    </a>
-
-                </div>
-
-            </div>
-
-        </body>
-
-        </html>
-        """
-
-    page = interaction_data["page"]
-
-    # =========================
-    # REAL BEHAVIORAL JOURNEY
-    # =========================
-    interaction_logs = (
-
-        interact_with_website(
-
-            page,
-
-            website_url
-        )
-    )
-
-    # =========================
     # BUILD CUSTOMER JOURNEY
     # =========================
     customer_journey = (
 
         build_customer_journey(
 
-            interaction_logs,
+            result["interaction_logs"],
 
             result["detected_events"]
         )
