@@ -481,9 +481,12 @@ def export_excel(results):
         sheet.cell(
             row=row_num,
             column=31
-        ).value = item.get(
-            "other_image_alts",
-            ""
+        ).value = ", ".join(
+
+            item.get(
+                "other_image_alts",
+                []
+            )
         )
 
         # -----------------------------------
