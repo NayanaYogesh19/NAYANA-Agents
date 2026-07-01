@@ -1,0 +1,40 @@
+# Secrets — never commit
+.env
+.env.*
+*.env
+!.env.example
+
+# Google OAuth tokens (written at runtime)
+token.json
+tokens.json
+*_token.json
+data/google_token.json
+credentials.json
+client_secret*.json
+service_account*.json
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Generated output
+output/
+*.pdf
+*.csv
+!data/accounts.csv
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
