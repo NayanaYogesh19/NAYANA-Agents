@@ -12,7 +12,6 @@ import json
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
-
 from openai import OpenAI
 
 from config import Config
@@ -424,11 +423,13 @@ def run_synthesis(target_bundle: Dict, competitor_bundle: Dict) -> SynthesisResu
         )
 
         response = client.chat.completions.create(
-            model="anthropic/claude-sonnet-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,   # lower = more consistent, data-grounded output
+            model=Config.LLM_MODEL,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2,
             max_tokens=4096,
-        )
+    )
 
         raw_text = response.choices[0].message.content
         logger.info("OpenRouter response: %d chars", len(raw_text))

@@ -30,8 +30,8 @@ class Config:
     # ── Output ────────────────────────────────────────────────────────────────
     REPORT_OUTPUT_DIR: str = os.getenv("REPORT_OUTPUT_DIR", "./output")
 
-    # ── Claude model ──────────────────────────────────────────────────────────
-    CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
+    # ── LLM model ──────────────────────────────────────────────────────────
+    LLM_MODEL: str = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
     # ── Scoring weights (must sum to 1.0) ─────────────────────────────────────
     WEIGHTS: dict = {
