@@ -1,0 +1,13 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+data/*.xlsx
+data/~$*.xlsx
+.pytest_cache/
+*.egg-info/
+.claude/
+
+frontend/node_modules/
+frontend/dist/
