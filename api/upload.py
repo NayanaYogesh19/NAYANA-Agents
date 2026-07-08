@@ -5,9 +5,12 @@ from fastapi import APIRouter
 from fastapi import UploadFile
 from fastapi import File
 from fastapi import Form
+from fastapi import HTTPException
 from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 
 router = APIRouter()
+
+MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
 
 
 @router.post("/upload_notice")
@@ -37,12 +40,18 @@ async def upload_notice(
         "latest.pdf"
     )
 
+    content = await file.read()
+
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum allowed size is {MAX_UPLOAD_SIZE // (1024 * 1024)} MB.",
+        )
+
     with open(
         file_path,
         "wb"
     ) as f:
-
-        content = await file.read()
 
         f.write(content)
 

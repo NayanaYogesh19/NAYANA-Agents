@@ -242,36 +242,43 @@ def extract_cover_recommendations(text: str) -> dict:
 
 # ── Block splitter ────────────────────────────────────────────────────────────
 
+def _earliest_match_start(text: str, patterns: list) -> int | None:
+    """Return the start offset of whichever pattern matches earliest in text, or None."""
+    positions = []
+    for pat in patterns:
+        m = re.search(pat, text, re.MULTILINE)
+        if m:
+            positions.append(m.start())
+    return min(positions) if positions else None
+
+
 def _find_notice_start(text: str) -> int:
     """Find the start of the actual AGM/EGM notice (agenda) section."""
-    for pat in [
+    pos = _earliest_match_start(text, [
         r"(?:^|\n)NOTICE IS HEREBY GIVEN",
         r"(?:^|\n)Notice is hereby given",
         r"(?:^|\n)ORDINARY BUSINESS\s*:",
         r"(?:^|\n)SPECIAL BUSINESS\s*:",
-    ]:
-        m = re.search(pat, text, re.MULTILINE)
-        if m:
-            return m.start()
-    return 0
+    ])
+    return pos if pos is not None else 0
 
 
 def _find_notice_end(text: str, start: int) -> int:
     """
     Find the end of the agenda section so we don't parse NOTES/Annexure items.
-    The notice ends at "By Order of the Board" / "NOTES:" / "Explanatory Statement".
+    The notice ends at whichever of "NOTES:" / "By Order of the Board" /
+    "For and on behalf of the Board" / "Explanatory Statement" occurs FIRST
+    after the agenda start — not whichever pattern is listed first.
     """
     search_text = text[start:]
-    for pat in [
+    pos = _earliest_match_start(search_text, [
         r"(?:^|\n)By Order of the Board",
         r"(?:^|\n)For and on behalf of the Board",
         r"(?:^|\n)NOTES\s*:",
         r"(?:^|\n)Notes\s*:",
-    ]:
-        m = re.search(pat, search_text, re.MULTILINE)
-        if m:
-            return start + m.start()
-    return len(text)
+        r"(?:^|\n)Explanatory\s+Statement",
+    ])
+    return start + pos if pos is not None else len(text)
 
 
 def _split_into_blocks(text: str) -> list:
