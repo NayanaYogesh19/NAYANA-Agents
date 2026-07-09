@@ -345,7 +345,8 @@ def _call_openrouter(prompt: str) -> dict:
         "max_tokens":  8000,
     }
 
-    r = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=None)
+    # Bounded timeout so a hung upstream call can't pin a thread/connection forever
+    r = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=180)
     if r.status_code != 200:
         raise RuntimeError(f"OpenRouter {r.status_code}: {r.text[:300]}")
 

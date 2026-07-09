@@ -97,7 +97,7 @@ def _call_openrouter(prompt: str) -> dict:
         OPENROUTER_URL,
         headers=headers,
         json=payload,
-        timeout=None,
+        timeout=90,
     )
 
     if response.status_code != 200:

@@ -1,22 +1,14 @@
 import os
 import json
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter
 
 from recommendation_engine.ai_analyzer import analyze_resolution
 from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
+from config.executor import run_sync as _run_sync
 
 router = APIRouter()
-
-# Large pool — each resolution is an independent long-running HTTP call
-_executor = ThreadPoolExecutor(max_workers=8)
-
-
-async def _run_sync(fn, *args):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(_executor, fn, *args)
 
 
 @router.get("/analyze_governance")

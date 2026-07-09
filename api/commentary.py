@@ -1,17 +1,14 @@
 import os
 import json
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Query
 
 from recommendation_engine.ingovern_commentary import generate_ingovern_commentary
 from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
+from config.executor import LLM_EXECUTOR, run_sync as _run_sync
 
 router = APIRouter(tags=["Commentary"])
-
-# Large pool — commentary calls are long-running HTTP requests to OpenRouter
-_executor = ThreadPoolExecutor(max_workers=8)
 
 
 def _load_session():
@@ -25,11 +22,6 @@ def _load_session():
 def _save_session(session: dict) -> None:
     with open(SESSION_PATH, "w", encoding="utf-8") as f:
         json.dump(session, f, indent=4)
-
-
-async def _run_sync(fn, *args):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(_executor, fn, *args)
 
 
 def _store_rag_background(session, notice_type):
@@ -119,7 +111,7 @@ async def generate_commentary(
 
     # RAG store runs in background — does not delay the response
     asyncio.get_event_loop().run_in_executor(
-        _executor, _store_rag_background, dict(session), notice_type
+        LLM_EXECUTOR, _store_rag_background, dict(session), notice_type
     )
 
     return {

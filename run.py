@@ -6,9 +6,10 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=False,
-        # Keep TCP connection alive for up to 10 minutes between requests
-        timeout_keep_alive=600,
-        # Never force-kill workers during shutdown — wait for requests to finish
-        timeout_graceful_shutdown=None,
+        # Idle keep-alive connections are cheap but unbounded ones aren't —
+        # match nginx's default keepalive_timeout instead of holding sockets for 10min
+        timeout_keep_alive=75,
+        # Bounded so a deploy/restart can't hang forever waiting on a stuck request
+        timeout_graceful_shutdown=60,
         workers=1,
     )

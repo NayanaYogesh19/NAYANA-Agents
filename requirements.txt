@@ -7,6 +7,5 @@ pdfplumber
 jinja2
 reportlab
 python-multipart
-aiofiles
 pydantic
 requests
