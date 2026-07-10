@@ -9,6 +9,7 @@ against the OpenRouter chat-completions endpoint.
 """
 
 import json
+import re
 import requests
 
 from config.config import OPENROUTER_API_KEY, OPENROUTER_MODEL
@@ -84,7 +85,7 @@ def _call_openrouter(prompt: str) -> dict:
     }
 
     payload = {
-        "model": "anthropic/claude-haiku-3-5",
+        "model": "google/gemini-2.5-flash-lite",
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user",   "content": prompt},
@@ -110,14 +111,17 @@ def _call_openrouter(prompt: str) -> dict:
         .get("choices", [{}])[0]
         .get("message", {})
         .get("content", "")
-    )
+    ).strip()
 
-    # Strip accidental markdown fences
-    content = content.strip()
-    if content.startswith("```"):
-        content = content.split("```")[1]
-        if content.startswith("json"):
-            content = content[4:]
+    # Strip markdown fences (Gemini often wraps JSON in ```json ... ```)
+    content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE).strip()
+    content = re.sub(r"\s*```$", "", content).strip()
+
+    # Find outermost JSON object in case of leading/trailing prose
+    brace_start = content.find("{")
+    brace_end   = content.rfind("}")
+    if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
+        content = content[brace_start:brace_end + 1]
 
     return json.loads(content)
 
