@@ -323,7 +323,7 @@ def _call_openrouter(prompt: str) -> dict:
     }
 
     payload = {
-        "model": "google/gemini-2.5-flash",
+        "model": "anthropic/claude-haiku-4.5",
         "messages": [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user",   "content": prompt},
@@ -344,7 +344,7 @@ def _call_openrouter(prompt: str) -> dict:
         .get("content", "")
     ).strip()
 
-    # Strip markdown fences (Gemini often wraps JSON in ```json ... ```)
+    # Strip accidental markdown fences, in case the model wraps JSON in ```json ... ```
     content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE).strip()
     content = re.sub(r"\s*```$", "", content).strip()
 
