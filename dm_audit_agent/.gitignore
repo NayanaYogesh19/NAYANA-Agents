@@ -1,0 +1,8 @@
+# Most patterns (`.env`, `venv/`, `__pycache__/`, `*.pdf`, `*.log`) are
+# already covered by the repo-root .gitignore. This file only adds
+# folder-specific rules not already handled there.
+
+reports/*/
+storage/*/
+!reports/.gitkeep
+!storage/.gitkeep
