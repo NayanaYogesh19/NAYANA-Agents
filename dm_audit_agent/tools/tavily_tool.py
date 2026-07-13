@@ -34,3 +34,26 @@ def tavily_search(query: str) -> str:
         return resp.text
     except Exception as exc:
         return f"Tavily search failed: {exc}"
+
+
+def tavily_search_raw(query: str, max_results: int = 5) -> list[dict]:
+    """Plain (non-agent-tool) Tavily search, used for direct programmatic
+    lookups such as discovering a company's social profile URLs. Returns the
+    list of result dicts (each with at least "url" and "title"), or an empty
+    list on any failure/misconfiguration — never raises."""
+    if not Config.TAVILY_API_KEY:
+        return []
+
+    url = "https://api.tavily.com/search"
+    headers = {
+        "Authorization": f"Bearer {Config.TAVILY_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {"query": query, "max_results": max_results}
+
+    try:
+        resp = requests.post(url, headers=headers, json=payload, timeout=20)
+        resp.raise_for_status()
+        return resp.json().get("results", [])
+    except Exception:
+        return []

@@ -1,9 +1,11 @@
 """
 config.py — Central configuration for the DM Audit Agent.
 
-Loads settings from .env: OpenRouter (LLM), Tavily (web search), and Google
-PageSpeed Insights. SEO/PPC/SMM metrics are entered manually by the user in
-the UI — no SE Ranking or other paid SEO API dependency.
+Loads settings from .env: OpenRouter (LLM), Tavily (web search), Google
+PageSpeed Insights, and Apify (SMM profile scraping). SEO/PPC metrics are
+entered manually by the user; SMM metrics are auto-fetched via Tavily
+(profile discovery) + Apify (Instagram/Facebook/LinkedIn/YouTube scraping) —
+no SE Ranking or other paid SEO API dependency.
 """
 
 from __future__ import annotations
@@ -23,6 +25,8 @@ class Config:
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 
     PAGESPEED_API_KEY: str = os.getenv("PAGESPEED_API_KEY", "")
+
+    APIFY_API_TOKEN: str = os.getenv("APIFY_API_TOKEN", "")
 
     APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT: int = int(os.getenv("APP_PORT", "8010"))

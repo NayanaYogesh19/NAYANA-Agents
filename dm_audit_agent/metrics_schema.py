@@ -1,8 +1,12 @@
 """
-metrics_schema.py — defines the manual-entry metric fields shown in the UI,
-replacing the SE Ranking API (removed entirely). The user reads these values
-off their own SE Ranking / Google Ads / Meta Ads Manager dashboards and types
-them in; nothing here is fetched automatically.
+metrics_schema.py — defines the metric fields shown on the Key Metrics
+Overview slide for each category.
+
+SEO and PPC metrics are manually entered by the user (read off their own SE
+Ranking / Google Ads / Meta Ads Manager dashboards) — no external SEO API
+dependency. SMM metrics are auto-fetched (see agents/smm_metrics_agent.py:
+Tavily profile discovery + Apify scraping across Instagram, Facebook,
+LinkedIn, YouTube) — no manual entry, no SMM input fields in the UI.
 """
 
 from __future__ import annotations
@@ -39,12 +43,17 @@ class PpcMetrics(BaseModel):
 
 
 class SmmMetrics(BaseModel):
-    """Manual social-media entry (used alongside Tavily-researched competitor
-    data; the client's own numbers are not reliably scrapable)."""
+    """Auto-fetched social-media metrics (Tavily profile discovery + Apify
+    scraping) — no manual entry. See agents/smm_metrics_agent.py."""
 
+    instagram_followers: Optional[float] = Field(None, description="Instagram Followers")
+    facebook_followers: Optional[float] = Field(None, description="Facebook Followers")
     linkedin_followers: Optional[float] = Field(None, description="LinkedIn Followers")
-    posts_per_month: Optional[float] = Field(None, description="Posts per Month")
-    engagement_rate: Optional[float] = Field(None, description="Engagement Rate %")
+    youtube_subscribers: Optional[float] = Field(None, description="YouTube Subscribers")
+    linkedin_company_size: Optional[str] = Field(None, description="LinkedIn Company Size")
+    linkedin_industry: Optional[str] = Field(None, description="LinkedIn Industry")
+    platforms_found: Optional[float] = Field(None, description="Platforms Found")
+    brand_tone: Optional[str] = Field(None, description="Brand Tone")
 
 
 SEO_FIELD_LABELS: dict[str, str] = {
@@ -70,17 +79,25 @@ PPC_FIELD_LABELS: dict[str, str] = {
 }
 
 SMM_FIELD_LABELS: dict[str, str] = {
+    "instagram_followers": "Instagram Followers",
+    "facebook_followers": "Facebook Followers",
     "linkedin_followers": "LinkedIn Followers",
-    "posts_per_month": "Posts per Month",
-    "engagement_rate": "Engagement Rate %",
+    "youtube_subscribers": "YouTube Subscribers",
+    "linkedin_company_size": "Company Size",
+    "linkedin_industry": "Industry (LinkedIn)",
+    "platforms_found": "Platforms Found",
+    "brand_tone": "Brand Tone",
 }
 
 
-def fmt(value: Optional[float]) -> str:
-    """Render a manually-entered numeric value the way the reference PDFs
-    display metrics (e.g. 4900 -> '4.9K'), or 'Data not available' if unset."""
-    if value is None:
+def fmt(value) -> str:
+    """Render a metric value the way the reference PDFs display metrics
+    (e.g. 4900 -> '4.9K' for numbers; strings pass through as-is), or
+    'Data not available' if unset/empty."""
+    if value is None or value == "":
         return "Data not available"
+    if isinstance(value, str):
+        return value
     if value == int(value):
         value = int(value)
     if isinstance(value, int) and abs(value) >= 1000:

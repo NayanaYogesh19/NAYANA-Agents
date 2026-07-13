@@ -15,9 +15,9 @@ from tools.website_parser_tool import website_parser
 
 SYSTEM_MESSAGE = """<role> You are a specialized Social Media Content Gap Strategist. Your responsibility is to analyze the target company's social presence—with a primary focus on LinkedIn—compare it against specific competitors, and identify data-backed opportunities for growth. Every insight must be specific to this target company and these named competitors — never generic, interchangeable advice. </role>
 <scope> STRICT MANDATES:
-Target Metrics: The target's own LinkedIn Follower Count, Posts per Month, and Engagement Rate are given to you manually — use those exact numbers as ground truth, never re-derive or estimate them.
+Target Metrics: The target's own follower counts (Instagram/Facebook/LinkedIn/YouTube), LinkedIn company size, industry, and brand tone are auto-fetched via profile scraping and given to you as ground truth — use those exact numbers/values, never re-derive or estimate them.
 Competitor Benchmarking: Use Tavily/Parser to research at least one (ideally three) named competitors' social presence for comparison.
-Data Sourcing: Attribute competitor metrics to Parser or Tavily; attribute target metrics to "manually provided."
+Data Sourcing: Attribute competitor metrics to Parser or Tavily; attribute target metrics to "auto-fetched via profile scraping."
 Actionable Output: Provide clear "Gaps" (where the target is falling behind) and "Opportunities" (tactics the target should adopt), phrased specifically for this company's industry and named competitors.
 LIMITATIONS:
 Do not invent competitor data. If exact competitor numbers are unavailable via tools, state "Data not available via search" and give a qualitative assessment instead.
@@ -27,7 +27,7 @@ INPUT VALIDATION
 target_company: (Name/Domain)
 competitors: (List provided by user)
 Nudge Logic: If < 3 competitors are provided, prepend this message:
-"Note: Only {N} competitor(s) specified. For stronger insights, provide three competitors. Add more for market depth, or reply "Suggest competitors" for industry examples."
+"Note: Only {{N}} competitor(s) specified. For stronger insights, provide three competitors. Add more for market depth, or reply "Suggest competitors" for industry examples."
 DATA EXTRACTION REQUIREMENTS
 For the Target and each Competitor, you must extract:
 --LinkedIn Follower Metrics: Total current followers.
@@ -81,10 +81,14 @@ def run_smm_gap_analysis(target_name: str, industry_name: str, competitor_names:
     def fmt(v):
         return "Data not available" if v is None else v
 
-    manual_metrics_block = f"""Manually Entered Target Metrics (ground truth for the target only):
+    auto_fetched_block = f"""Auto-Fetched Target Metrics (ground truth for the target only, via profile scraping):
+Instagram Followers: {fmt(smm_metrics.get('instagram_followers'))}
+Facebook Followers: {fmt(smm_metrics.get('facebook_followers'))}
 LinkedIn Followers: {fmt(smm_metrics.get('linkedin_followers'))}
-Posts per Month: {fmt(smm_metrics.get('posts_per_month'))}
-Engagement Rate: {fmt(smm_metrics.get('engagement_rate'))}"""
+YouTube Subscribers: {fmt(smm_metrics.get('youtube_subscribers'))}
+LinkedIn Company Size: {fmt(smm_metrics.get('linkedin_company_size'))}
+LinkedIn Industry: {fmt(smm_metrics.get('linkedin_industry'))}
+Brand Tone: {fmt(smm_metrics.get('brand_tone'))}"""
 
     user_text = f"""Company Name :
 {target_name}
@@ -95,7 +99,7 @@ The industry that the target works on:
 Competitor Names:
 {competitor_names}
 
-{manual_metrics_block}"""
+{auto_fetched_block}"""
 
     llm = get_llm(temperature=0.3)
     tools = [website_parser, tavily_search]

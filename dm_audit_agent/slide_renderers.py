@@ -1,8 +1,13 @@
 """
-slide_renderers.py — one drawing function per section slug, each given the
-company context + manual metrics + LLM-generated section text, and a
-SlideCanvas to draw onto. This is the layer that turns dynamic, per-company
-LLM content into pages matching the reference PDFs' fixed visual layout.
+slide_renderers.py — one drawing function per render_key, matching the
+reference "Digital Marketing Audit Report" template exactly:
+
+  title, metrics, current_state, visibility_gap  — per-category slides,
+      receive ctx["category"] to know which of SEO/PPC/SMM this instance is for.
+  best_practices, benchmarks, strategic_takeaways, growth_recommendations,
+      summary_next_steps, contact — combined slides, receive
+      ctx["categories"] (the full list) since their content spans all
+      selected categories.
 """
 
 from __future__ import annotations
@@ -30,18 +35,30 @@ from pdf_engine import (
     TEXT_SECONDARY,
     WHITE,
     SlideCanvas,
+    _alpha,
+    _wrap_text,
 )
 from metrics_schema import PPC_FIELD_LABELS, SEO_FIELD_LABELS, SMM_FIELD_LABELS, fmt
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from templates import CATEGORY_LABELS
+
+CATEGORY_METRIC_LABELS = {"seo": SEO_FIELD_LABELS, "ppc": PPC_FIELD_LABELS, "smm": SMM_FIELD_LABELS}
+CATEGORY_METRIC_TAG_COLOR = {"seo": ACCENT_SKY, "ppc": STATUS_WARNING, "smm": ACCENT_PURPLE}
+CATEGORY_ICON = {"seo": "▲", "ppc": "★", "smm": "◆"}
+CATEGORY_SHORT_LABEL = {"seo": "SEO", "ppc": "PPC", "smm": "SMM"}
+CATEGORY_GROWTH_BLOCK_TITLE = {
+    "seo": "Search & Technical Optimization",
+    "ppc": "Ads Enhancement",
+    "smm": "Brand Authority & Engagement",
+}
 
 
-def _bullets_from_text(text: str, max_items: int = 8) -> list[str]:
-    """Splits an LLM section's plain-text output into bullet lines. Accepts
-    lines already starting with '-'/'•' or falls back to sentence-splitting."""
-    lines = [l.strip(" -•\t:") for l in text.splitlines() if l.strip()]
-    lines = [l for l in lines if len(l) > 3]
-    if not lines:
-        lines = [s.strip(" -•\t:") for s in text.split(".") if len(s.strip()) > 3]
-    return lines[:max_items]
+def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
+    return _wrap_text(text, font, size, max_w)
+
+
+def _string_w(text: str, font: str, size: float) -> float:
+    return stringWidth(text, font, size)
 
 
 # ---------------------------------------------------------------- title ----
@@ -76,7 +93,7 @@ def render_title(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
 
     c.setFillColor(TEXT_SECONDARY)
     c.setFont(FONT_OBLIQUE, 11)
-    for line in _wrap(f'"{ctx.get("positioning_line", ctx["industry"])}"', FONT_OBLIQUE, 11, card_w - 60):
+    for line in _wrap(f'"{ctx.get("positioning_line") or ctx["industry"]}"', FONT_OBLIQUE, 11, card_w - 60):
         c.drawString(card_x + 34, y, line)
         y -= 16
 
@@ -97,158 +114,286 @@ def render_title(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     )
 
 
-# ------------------------------------------------------------- metrics ----
+# ------------------------------------------------------- key metrics ----
 def render_metrics(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    y = sc.header("Key Metrics Overview", f"Manually Entered Snapshot of {ctx['company_name']}'s Performance")
-    seo = ctx["seo_metrics"]
+    category = ctx["category"]
+    cat_label = CATEGORY_LABELS[category]
+    tag_color = CATEGORY_METRIC_TAG_COLOR[category]
+    field_labels = CATEGORY_METRIC_LABELS[category]
+    metrics = ctx["metrics_by_category"].get(category, {})
+    is_auto_fetched = category == "smm"
+    tag_text = "Auto-Fetched" if is_auto_fetched else "Manual Entry"
 
-    tiles = [
-        ("Health Score", f"{fmt(seo.get('health_score'))}/100" if seo.get("health_score") is not None else "Data not available", "Manual Entry", STATUS_SUCCESS),
-        ("Organic Traffic", fmt(seo.get("organic_traffic")), "Manual Entry", ACCENT_SKY),
-        ("Organic Keywords", fmt(seo.get("organic_keywords")), "Manual Entry", ACCENT_SKY),
-        ("Passed Checks", fmt(seo.get("passed_checks")), "Manual Entry", STATUS_SUCCESS),
-        ("Crawled Pages", fmt(seo.get("crawled_pages")), "Manual Entry", TEXT_MUTED),
-        ("Errors", fmt(seo.get("errors")), "Manual Entry", STATUS_DANGER),
-        ("Warnings", fmt(seo.get("warnings")), "Manual Entry", STATUS_WARNING),
-        ("Notices", fmt(seo.get("notices")), "Manual Entry", ACCENT_SKY),
-    ]
+    y = sc.header("Key Metrics Overview", f"Live Snapshot of {ctx['company_name']}'s {cat_label} Performance")
+
+    tile_specs = []
+    for key, label in field_labels.items():
+        value = metrics.get(key)
+        if key == "health_score" and value is not None:
+            display = f"{fmt(value)}/100"
+        else:
+            display = fmt(value)
+        color = STATUS_DANGER if key == "errors" else (STATUS_WARNING if key == "warnings" else tag_color)
+        tile_specs.append((label, display, color))
 
     cols = 4
     gap = 12
     tile_w = (PAGE_W - 2 * MARGIN - gap * (cols - 1)) / cols
     tile_h = 1.35 * inch
     top_row_y = y - tile_h
-    for i, (label, value, tag, color) in enumerate(tiles):
+    for i, (label, value, color) in enumerate(tile_specs):
         col = i % cols
         row = i // cols
         x = MARGIN + col * (tile_w + gap)
         ty = top_row_y - row * (tile_h + gap)
-        sc.kpi_tile(x, ty, tile_w, tile_h, label, str(value), tag, tag_color=color, top_accent=color)
+        sc.kpi_tile(x, ty, tile_w, tile_h, label, str(value), tag_text, tag_color=color, top_accent=color)
 
-    sc.footer(f"All numbers manually entered by the user (Snapshot Date: {datetime.now().strftime('%b %d, %Y')}).")
+    footer_text = (
+        f"Auto-fetched via social profile discovery & scraping (Snapshot Date: {datetime.now().strftime('%b %d, %Y')})."
+        if is_auto_fetched
+        else f"All numbers manually entered by the user (Snapshot Date: {datetime.now().strftime('%b %d, %Y')})."
+    )
+    sc.footer(footer_text)
 
 
 # ---------------------------------------------------- generic 2x2 grid ----
-def render_quad_grid(sc: SlideCanvas, title: str, subtitle: str, quads: list[tuple[str, list[str]]]) -> None:
+def render_quad_grid(sc: SlideCanvas, title: str, subtitle: str, quads: list[tuple[str, list[str], str]]) -> None:
+    """quads: list of (heading, bullets, icon) tuples."""
     y = sc.header(title, subtitle)
     gap = 14
     card_w = (PAGE_W - 2 * MARGIN - gap) / 2
     card_h = (y - MARGIN - gap - 0.3 * inch) / 2
     positions = [(MARGIN, y - card_h), (MARGIN + card_w + gap, y - card_h),
                  (MARGIN, y - 2 * card_h - gap), (MARGIN + card_w + gap, y - 2 * card_h - gap)]
-    for (heading, bullets), (x, cy) in zip(quads[:4], positions):
+    for (heading, bullets, icon), (x, cy) in zip(quads[:4], positions):
         sc.rounded_card(x, cy, card_w, card_h, radius=12)
-        sc.text_block(x + 16, cy + card_h - 26, card_w - 32, heading, bullets, body_size=8.6, heading_size=11.5, gap=11.5)
+        sc.text_block(x + 16, cy + card_h - 22, card_w - 32, heading, bullets, body_size=8.6, heading_size=11.5, gap=11.5, icon=icon)
     sc.footer()
+
+
+def _section(ctx: dict[str, Any], category: str, slug: str) -> dict[str, list[str]]:
+    per_cat = ctx["content"].get("per_category", {}).get(category, {})
+    return per_cat.get(slug) or {}
+
+
+def _bullets(section: dict[str, list[str]], sub_key: str) -> list[str]:
+    values = section.get(sub_key) or []
+    return values if values else ["Data not available"]
 
 
 # ------------------------------------------------------- current state ----
 def render_current_state(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("current_state", "")
-    quads = _split_into_quads(content, [
-        "Performance Overview", "Technical Gaps", "Content Gaps", "Visibility Challenges",
-    ])
+    category = ctx["category"]
+    section = _section(ctx, category, "current_state")
+    cat_label = CATEGORY_LABELS[category]
+    quads = [
+        ("Performance Overview", _bullets(section, "performance_overview"), "▲"),
+        ("Technical Gaps", _bullets(section, "technical_gaps"), "★"),
+        ("Content Gaps", _bullets(section, "content_gaps"), "◆"),
+        (f"{cat_label} Challenges", _bullets(section, "visibility_challenges"), "●"),
+    ]
     render_quad_grid(
         sc,
         f"Current Digital State of {ctx['company_name']} in the {ctx['industry']} Sector",
-        "",
+        f"{cat_label} Perspective",
         quads,
     )
 
 
 def render_visibility_gap(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("visibility_gap", "")
-    halves = _split_into_quads(content, ["Client vs. Industry", "Strategic Opportunities"])
-    y = sc.header(f"Visibility Gap in {ctx['industry']}", "")
+    category = ctx["category"]
+    section = _section(ctx, category, "visibility_gap")
+    cat_label = CATEGORY_LABELS[category]
+    halves = [
+        ("Client vs. Industry", _bullets(section, "client_vs_industry")),
+        ("Strategic Opportunities", _bullets(section, "strategic_opportunities")),
+    ]
+    y = sc.header(f"Visibility Gap in {ctx['industry']}", cat_label)
     gap = 16
     card_w = (PAGE_W - 2 * MARGIN - gap) / 2
     card_h = y - MARGIN - 0.3 * inch
-    for i, (heading, bullets) in enumerate(halves[:2]):
+    icons = ["▲", "●"]
+    disclaimer = "All numbers are indicative estimates based on available tools."
+    # "Client vs. Industry" carries more bullets (5 vs 3) — use a slightly
+    # smaller body size there so all 5 fit comfortably in the same card height.
+    body_sizes = [7.8, 8.8]
+    for i, ((heading, bullets), icon, body_size) in enumerate(zip(halves, icons, body_sizes)):
         x = MARGIN + i * (card_w + gap)
         sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 30, card_w - 36, heading, bullets, body_size=8.8, heading_size=12.5, gap=13)
+        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 26, card_w - 36, heading, bullets,
+                      body_size=body_size, heading_size=12.5, gap=body_size + 4.2, icon=icon,
+                      per_bullet_disclaimer=disclaimer)
     sc.footer()
 
 
+# --------------------------------------------------- combined slides ----
 def render_best_practices(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("best_practices", "")
-    bullets = _bullets_from_text(content, max_items=6)
-    y = sc.header(f"Industry Best Practices in {ctx['industry']}", "")
+    """Always renders as ONE slide regardless of how many categories are
+    selected — one card per selected category, each with its own 5-bullet
+    "Competitor Highlights" for that category, laid out side by side."""
+    categories = ctx["categories"]
+    best_practices = ctx["content"].get("best_practices", {})
+    industry = ctx["industry"]
+    y = sc.header(f"Industry Best Practices in {industry}", "")
+
+    n = len(categories)
+    gap = 14
+    card_w = (PAGE_W - 2 * MARGIN - gap * (n - 1)) / n
+    card_h = y - MARGIN - 0.3 * inch
+
+    # Fewer bullets fit comfortably at the default size; scale body size down
+    # a little as more cards (narrower width) are shown side by side.
+    body_size = {1: 10.5, 2: 9.2, 3: 8.2}.get(n, 8.2)
+
+    for i, cat in enumerate(categories):
+        x = MARGIN + i * (card_w + gap)
+        bullets = best_practices.get(cat) or ["Data not available"]
+        heading = f"Competitor Highlights — {CATEGORY_SHORT_LABEL[cat]}" if n > 1 else "Competitor Highlights"
+        sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
+        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 26, card_w - 36, heading, bullets,
+                      body_size=body_size, heading_size=(11.5 if n == 3 else 12.5) if n > 1 else 14, gap=body_size + 4,
+                      icon=CATEGORY_ICON.get(cat, "◆"))
+    sc.footer()
+
+
+def _benchmark_slide(sc: SlideCanvas, ctx: dict[str, Any], include_takeaways: bool) -> None:
+    benchmarks = ctx["content"].get("benchmarks", {})
+    client_table = benchmarks.get("client_table") or {"headers": [], "rows": []}
+    industry_table = benchmarks.get("industry_table") or {"headers": [], "rows": []}
+    company = ctx["company_name"]
+
+    named_competitors = ctx.get("competitor_names", "")
+    y = sc.header("Competitive Benchmark Analysis", f"{company} vs. Key Industry Players ({named_competitors})" if named_competitors else company)
+
+    gap = 16
+    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
+    top_card_h = (y - MARGIN - gap - (1.6 * inch if include_takeaways else 0.3 * inch)) if include_takeaways else (y - MARGIN - 0.3 * inch)
+
+    left_headers = client_table.get("headers") or ["Metric", "Current Status", "Trend"]
+    left_rows = client_table.get("rows") or [["Data not available", "Data not available", "Data not available"]]
+    right_headers = industry_table.get("headers") or ["Metric", company, "Industry"]
+    right_rows = industry_table.get("rows") or [["Data not available", "Data not available", "Data not available"]]
+
+    sc.rounded_card(MARGIN, y - top_card_h, card_w, top_card_h, radius=12)
+    c = sc.c
+    c.setFillColor(ACCENT_PURPLE)
+    c.setFont(FONT_BOLD, 12)
+    c.drawString(MARGIN + 18, y - 26, f"{company} Technical Performance")
+    sc.table(MARGIN + 18, y - 44, card_w - 36, left_headers, left_rows, row_h=20)
+
+    rx = MARGIN + card_w + gap
+    sc.rounded_card(rx, y - top_card_h, card_w, top_card_h, radius=12)
+    c.setFillColor(ACCENT_PURPLE)
+    c.setFont(FONT_BOLD, 12)
+    c.drawString(rx + 18, y - 26, "Industry Comparison")
+    sc.table(rx + 18, y - 44, card_w - 36, right_headers, right_rows, row_h=20)
+
+    if include_takeaways:
+        takeaways = benchmarks.get("takeaways") or ["Data not available"]
+        ty_card_y = MARGIN
+        ty_card_h = y - top_card_h - gap - MARGIN
+        sc.rounded_card(MARGIN, ty_card_y, PAGE_W - 2 * MARGIN, ty_card_h, radius=12)
+        c.setFillColor(ACCENT_PURPLE)
+        c.setFont(FONT_BOLD, 12)
+        c.drawString(MARGIN + 18, ty_card_y + ty_card_h - 26, "Strategic Takeaways & Opportunities")
+        col_w = (PAGE_W - 2 * MARGIN - 36) / 2
+        ty = ty_card_y + ty_card_h - 48
+        for i, item in enumerate(takeaways):
+            col = i % 2
+            if col == 0 and i > 0:
+                ty -= 4
+            x = MARGIN + 18 + col * (col_w + 12)
+            yy = ty if col == 0 else ty
+            c.setFillColor(ACCENT_PURPLE)
+            c.circle(x + 2, yy + 3, 1.5, fill=1, stroke=0)
+            c.setFillColor(NAVY)
+            c.setFont(FONT_REGULAR, 8.6)
+            for line in _wrap(item, FONT_REGULAR, 8.6, col_w - 20):
+                c.drawString(x + 10, yy, line)
+                yy -= 11
+            if col == 1:
+                ty = min(ty, yy) - 4
+    sc.footer()
+
+
+def render_benchmarks(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
+    _benchmark_slide(sc, ctx, include_takeaways=not ctx.get("has_strategic_takeaways_slide", False))
+
+
+def render_strategic_takeaways(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
+    benchmarks = ctx["content"].get("benchmarks", {})
+    takeaways = benchmarks.get("takeaways") or ["Data not available"]
+    y = sc.header("Strategic Takeaways & Opportunities", ctx["company_name"])
     card_w = PAGE_W - 2 * MARGIN
     card_h = y - MARGIN - 0.3 * inch
     sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-    sc.text_block(MARGIN + 20, MARGIN + 0.3 * inch + card_h - 34, card_w - 40, "Competitor Highlights", bullets,
-                   body_size=9.5, heading_size=14, gap=15)
+    sc.text_block(MARGIN + 20, MARGIN + 0.3 * inch + card_h - 30, card_w - 40, "Key Opportunities Across the Board", takeaways,
+                  body_size=9.5, heading_size=14, gap=15, icon="★")
     sc.footer()
-
-
-def _benchmark_table(sc: SlideCanvas, ctx: dict[str, Any], kind: str, title: str) -> None:
-    y = sc.header(title, f"{ctx['company_name']} vs. Key Industry Players")
-    data = ctx["benchmarks"].get(kind, {})
-    rows = data.get("rows", []) or [["Data not available", "Data not available", "Data not available"]]
-    headers = data.get("headers", ["Metric", ctx["company_name"], "Industry Average"])
-
-    table_h = 22 * (len(rows) + 1) + 20
-    card_w = PAGE_W - 2 * MARGIN
-    sc.rounded_card(MARGIN, y - table_h - 20, card_w, table_h + 20, radius=12)
-    sc.table(MARGIN + 16, y - 12, card_w - 32, headers, rows, row_h=22)
-
-    takeaways = data.get("takeaways", [])
-    if takeaways:
-        ty = y - table_h - 34
-        c = sc.c
-        c.setFillColor(ACCENT_PURPLE)
-        c.setFont(FONT_BOLD, 10.5)
-        c.drawString(MARGIN, ty, "Strategic Takeaways")
-        ty -= 16
-        c.setFont(FONT_REGULAR, 8.6)
-        c.setFillColor(NAVY)
-        for t in takeaways[:3]:
-            for line in _wrap(f"• {t}", FONT_REGULAR, 8.6, card_w):
-                c.drawString(MARGIN, ty, line)
-                ty -= 12
-    sc.footer()
-
-
-def render_benchmarks_seo(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    _benchmark_table(sc, ctx, "seo", "Competitive Benchmark Analysis — SEO")
-
-
-def render_benchmarks_smm(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    _benchmark_table(sc, ctx, "smm", "Competitive Benchmark Analysis — Social Media")
-
-
-def render_benchmarks_ppc(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    _benchmark_table(sc, ctx, "ppc", "Competitive Benchmark Analysis — Performance Marketing")
 
 
 def render_growth_recommendations(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("growth_recommendations", "")
-    quads = _split_into_quads(content, ["Search & Technical Optimization", "Brand Authority & Engagement"])
+    """Always renders as ONE slide regardless of how many categories are
+    selected — one block per selected category: SEO -> "Search & Technical
+    Optimization", PPC -> "Ads Enhancement", SMM -> "Brand Authority &
+    Engagement", laid out side by side."""
+    categories = ctx["categories"]
+    growth = ctx["content"].get("growth_recommendations", {})
     y = sc.header(f"Growth Recommendations for {ctx['company_name']}", "")
+
+    n = len(categories)
     gap = 16
-    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
+    card_w = (PAGE_W - 2 * MARGIN - gap * (n - 1)) / n
     card_h = y - MARGIN - 0.3 * inch
-    for i, (heading, bullets) in enumerate(quads[:2]):
+    title_size = {1: 12.5, 2: 12.5, 3: 11}.get(n, 11)
+
+    body_size = {1: 9.2, 2: 9.2, 3: 8.2}.get(n, 8.2)
+    heading_size = {1: 13, 2: 13, 3: 11}.get(n, 11)
+    for i, cat in enumerate(categories):
         x = MARGIN + i * (card_w + gap)
+        cards = growth.get(cat) or []
+        block_title = CATEGORY_GROWTH_BLOCK_TITLE.get(cat, cat.upper())
         sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 30, card_w - 36, heading, bullets, body_size=8.6, heading_size=12, gap=12.5)
+        sc.benefit_card_list(x + 18, MARGIN + 0.3 * inch + card_h - 24, card_w - 36,
+                            block_title, cards, icon=CATEGORY_ICON.get(cat, "●"),
+                            title_size=body_size, body_size=body_size - 0.8, heading_size=heading_size)
     sc.footer()
 
 
 def render_summary_next_steps(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("summary_next_steps", "")
-    quads = _split_into_quads(content, ["Foundation & Strategy", "Growth & Execution"])
+    """Fixed 3-section structure (NOT per-category) — Foundation & Strategy,
+    Growth & Execution, and Action Plan — each with up to 6 compact numbered
+    items, laid out in 3 columns so all 18 items fit on one slide."""
+    summary = ctx["content"].get("summary_next_steps", {})
+    sections = [
+        ("Foundation & Strategy", summary.get("foundation_strategy") or []),
+        ("Growth & Execution", summary.get("growth_execution") or []),
+        ("Action Plan", summary.get("action_plan") or []),
+    ]
     y = sc.header(f"Summary & Next Steps for {ctx['company_name']}", "")
-    gap = 16
-    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
-    card_h = y - MARGIN - 1.1 * inch - 0.3 * inch
-    for i, (heading, bullets) in enumerate(quads[:2]):
-        x = MARGIN + i * (card_w + gap)
-        sc.rounded_card(x, MARGIN + 1.1 * inch, card_w, card_h, radius=12)
-        sc.text_block(x + 18, MARGIN + 1.1 * inch + card_h - 30, card_w - 36, heading, bullets, body_size=8.6, heading_size=12, gap=12.5)
+    gap = 12
+    banner_h = 0.7 * inch
+    n = len(sections)
+    card_w = (PAGE_W - 2 * MARGIN - gap * (n - 1)) / n
+    card_h = y - MARGIN - banner_h - 0.25 * inch
 
-    sc.dark_panel(MARGIN, MARGIN, PAGE_W - 2 * MARGIN, 0.85 * inch, "", "Ready to Accelerate Growth?",
+    running_number = 1
+    for i, (heading, cards) in enumerate(sections):
+        x = MARGIN + i * (card_w + gap)
+        sc.rounded_card(x, MARGIN + banner_h + 0.15 * inch, card_w, card_h, radius=12)
+        c = sc.c
+        c.setFillColor(ACCENT_PURPLE)
+        c.setFont(FONT_BOLD, 10.5)
+        cy = MARGIN + banner_h + 0.15 * inch + card_h - 20
+        c.drawString(x + 14, cy, heading)
+        cy -= 16
+        for card in cards:
+            cy = sc.numbered_card_compact(x + 14, cy, card_w - 28, running_number,
+                                          card.get("title", ""), card.get("detail", ""),
+                                          card.get("impact", card.get("benefit", "")))
+            running_number += 1
+
+    sc.dark_panel(MARGIN, MARGIN, PAGE_W - 2 * MARGIN, banner_h, "", "Ready to Accelerate Growth?",
                   ["Let's finalize the implementation timeline together."])
 
 
@@ -287,212 +432,41 @@ def render_contact(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     ]):
         x = start_x + i * (card_w + gap)
         sc.rounded_card(x, card_y, card_w, card_h, radius=14)
+
+        avatar_r = 14
+        avatar_cx = x + card_w / 2
+        avatar_cy = card_y + card_h - 14
+        c.saveState()
+        p = c.beginPath()
+        p.circle(avatar_cx, avatar_cy, avatar_r)
+        c.clipPath(p, stroke=0, fill=0)
+        c.setFillColor(_alpha(ACCENT_INDIGO, 0.12))
+        c.circle(avatar_cx, avatar_cy, avatar_r, fill=1, stroke=0)
+        c.setFillColor(ACCENT_INDIGO)
+        c.circle(avatar_cx, avatar_cy + 4, 4.3, fill=1, stroke=0)
+        c.circle(avatar_cx, avatar_cy - 11, 9, fill=1, stroke=0)
+        c.restoreState()
+
         c.setFillColor(NAVY)
         c.setFont(FONT_BOLD, 11)
-        c.drawCentredString(x + card_w / 2, card_y + card_h - 30, name)
+        c.drawCentredString(x + card_w / 2, card_y + card_h - 48, name)
         c.setFillColor(TEXT_SECONDARY)
         c.setFont(FONT_REGULAR, 8)
-        c.drawCentredString(x + card_w / 2, card_y + card_h - 48, email)
-        c.drawCentredString(x + card_w / 2, card_y + card_h - 62, phone)
+        c.drawCentredString(x + card_w / 2, card_y + card_h - 64, email)
+        c.drawCentredString(x + card_w / 2, card_y + card_h - 76, phone)
+
+    button_w, button_h = 1.9 * inch, 0.42 * inch
+    button_x = (PAGE_W - button_w) / 2
+    button_y = card_y - 0.55 * inch
+    c.setFillColor(ACCENT_INDIGO)
+    c.roundRect(button_x, button_y, button_w, button_h, button_h / 2, fill=1, stroke=0)
+    c.setFillColor(WHITE)
+    c.setFont(FONT_BOLD, 9.5)
+    c.drawCentredString(button_x + button_w / 2, button_y + button_h / 2 - 3.3, "Schedule a Discussion")
 
     c.setFillColor(TEXT_MUTED)
     c.setFont(FONT_OBLIQUE, 7.5)
     c.drawCentredString(PAGE_W / 2, MARGIN, "All numerical values are indicative and derived from available analytics tools.")
-
-
-# ------------------------------------------------------------ full mode ----
-def render_executive_summary(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("executive_summary", "")
-    quads = _split_into_quads(content, ["Strengths (To Scale)", "Performance Gaps (To Fix Now)"])
-    y = sc.header("Executive Summary", "Current State Assessment & Growth Opportunity")
-    gap = 16
-    left_w = (PAGE_W - 2 * MARGIN - gap) * 0.55
-    right_w = (PAGE_W - 2 * MARGIN - gap) * 0.45
-    card_h = y - MARGIN - 0.3 * inch
-    sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, left_w, card_h, radius=12)
-    sc.text_block(MARGIN + 18, MARGIN + 0.3 * inch + card_h - 30, left_w - 36,
-                  "Strengths & Gaps", quads[0][1] + quads[1][1] if len(quads) >= 2 else quads[0][1] if quads else [],
-                  body_size=8.4, heading_size=12, gap=11.5)
-
-    rx = MARGIN + left_w + gap
-    imperative = ctx["section_text"].get("executive_summary_imperative", "The opportunity is to build a system for compounding growth.")
-    sc.dark_panel(rx, MARGIN + 0.3 * inch, right_w, card_h, "Strategic Imperative", imperative,
-                  ["Focus must shift toward sustainable, trust-driven growth across all channels."])
-    sc.footer()
-
-
-def render_positioning_audit(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("positioning_audit", "")
-    quads = _split_into_quads(content, [f"{ctx['company_name']} Stands For", "Market Gap Analysis"])
-    render_quad_grid(sc, "Strategic Positioning Audit", "Brand Authority & Market Opportunity Analysis", quads[:2] + [("", [])] * max(0, 2 - len(quads)))
-
-
-def render_performance_marketing(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    ppc = ctx.get("ppc_metrics", {})
-    content = ctx["section_text"].get("performance_marketing", "")
-    y = sc.header("Performance Marketing Audit", "Funnel Reality & Channel Optimization")
-
-    tiles = [(label, fmt(ppc.get(key))) for key, label in PPC_FIELD_LABELS.items()]
-    cols = 4
-    gap = 12
-    tile_w = (PAGE_W - 2 * MARGIN - gap * (cols - 1)) / cols
-    tile_h = 1.05 * inch
-    for i, (label, value) in enumerate(tiles[:8]):
-        col = i % cols
-        row = i // cols
-        x = MARGIN + col * (tile_w + gap)
-        ty = y - tile_h - row * (tile_h + gap)
-        sc.kpi_tile(x, ty, tile_w, tile_h, label, str(value), tag_color=ACCENT_SKY, top_accent=ACCENT_SKY)
-
-    bullets = _bullets_from_text(content, max_items=5)
-    text_y = y - 2 * (tile_h + gap) - 10
-    card_h = text_y - MARGIN - 0.3 * inch
-    card_w = PAGE_W - 2 * MARGIN
-    sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-    sc.text_block(MARGIN + 18, MARGIN + 0.3 * inch + card_h - 28, card_w - 36, "Channel Analysis", bullets,
-                  body_size=8.6, heading_size=12, gap=12)
-    sc.footer()
-
-
-def render_seo_technical_audit(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("seo_technical_audit", "")
-    seo = ctx["seo_metrics"]
-    y = sc.header("SEO & Technical Audit", "Critical Infrastructure & Health Analysis")
-
-    tiles = [
-        ("Errors", fmt(seo.get("errors")), STATUS_DANGER),
-        ("Warnings", fmt(seo.get("warnings")), STATUS_WARNING),
-        ("Notices", fmt(seo.get("notices")), ACCENT_SKY),
-        ("Crawled Pages", fmt(seo.get("crawled_pages")), TEXT_MUTED),
-    ]
-    gap = 12
-    tile_w = (PAGE_W - 2 * MARGIN - gap * 3) / 4
-    tile_h = 1.1 * inch
-    for i, (label, value, color) in enumerate(tiles):
-        x = MARGIN + i * (tile_w + gap)
-        sc.kpi_tile(x, y - tile_h, tile_w, tile_h, label, str(value), tag_color=color, top_accent=color)
-
-    bullets = _bullets_from_text(content, max_items=6)
-    text_y = y - tile_h - gap - 10
-    card_h = text_y - MARGIN - 0.3 * inch
-    card_w = PAGE_W - 2 * MARGIN
-    sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-    sc.text_block(MARGIN + 18, MARGIN + 0.3 * inch + card_h - 28, card_w - 36, "Structural Gaps", bullets,
-                  body_size=8.6, heading_size=12, gap=12)
-    sc.footer()
-
-
-def render_smm_audit(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    smm = ctx.get("smm_metrics", {})
-    content = ctx["section_text"].get("smm_audit", "")
-    y = sc.header("Social Media Audit", "Client vs. Industry Presence")
-
-    tiles = [(label, fmt(smm.get(key))) for key, label in SMM_FIELD_LABELS.items()]
-    gap = 14
-    tile_w = (PAGE_W - 2 * MARGIN - gap * 2) / 3
-    tile_h = 1.1 * inch
-    for i, (label, value) in enumerate(tiles):
-        x = MARGIN + i * (tile_w + gap)
-        sc.kpi_tile(x, y - tile_h, tile_w, tile_h, label, str(value), tag_color=ACCENT_PURPLE, top_accent=ACCENT_PURPLE)
-
-    bullets = _bullets_from_text(content, max_items=6)
-    text_y = y - tile_h - gap - 10
-    card_h = text_y - MARGIN - 0.3 * inch
-    card_w = PAGE_W - 2 * MARGIN
-    sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-    sc.text_block(MARGIN + 18, MARGIN + 0.3 * inch + card_h - 28, card_w - 36, "Competitive Gap Analysis", bullets,
-                  body_size=8.6, heading_size=12, gap=12)
-    sc.footer()
-
-
-def render_conversion_funnel(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("conversion_funnel", "")
-    quads = _split_into_quads(content, ["Diagnosis", "Conversion System Fix"])
-    render_quad_grid(sc, "Conversion System Audit", "Funnel Flow Analysis & Friction Points", quads[:2] + [("", [])] * max(0, 2 - len(quads)))
-
-
-def render_strategic_recommendations(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    content = ctx["section_text"].get("strategic_recommendations", "")
-    quads = _split_into_quads(content, ["Phase 1 — Foundation Repair", "Phase 2 — Growth & Scale"])
-    y = sc.header("Strategic Recommendations", "Phased Roadmap")
-    gap = 16
-    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
-    card_h = y - MARGIN - 0.3 * inch
-    for i, (heading, bullets) in enumerate(quads[:2]):
-        x = MARGIN + i * (card_w + gap)
-        sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 30, card_w - 36, heading, bullets, body_size=8.4, heading_size=12, gap=11.5)
-    sc.footer()
-
-
-def render_kpis_targets(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
-    data = ctx.get("kpi_targets", {})
-    rows = data.get("rows") or [["Data not available", "Data not available", "Data not available", "Data not available"]]
-    headers = data.get("headers", ["Metric", "Current State", "6-Month Target", "Strategic Impact"])
-    y = sc.header("KPIs & Targets", "Measuring Success & Growth Trajectory")
-    card_w = PAGE_W - 2 * MARGIN
-    table_h = 22 * (len(rows) + 1) + 16
-    sc.rounded_card(MARGIN, y - table_h - 10, card_w, table_h, radius=12)
-    col_widths = [card_w * 0.22, card_w * 0.2, card_w * 0.2, card_w * 0.38 - 32]
-    sc.table(MARGIN + 16, y - 6, card_w - 32, headers, rows, col_widths=col_widths, row_h=22)
-    sc.footer()
-
-
-# ------------------------------------------------------------- helpers ----
-def _split_into_quads(text: str, headings: list[str]) -> list[tuple[str, list[str]]]:
-    """Splits LLM output into (heading, bullets) groups using the given
-    heading labels as section markers if present in the text; otherwise
-    evenly distributes bullet lines across the requested number of quads."""
-    result: list[tuple[str, list[str]]] = []
-    lower = text.lower()
-    positions = []
-    for h in headings:
-        idx = lower.find(h.lower())
-        positions.append(idx if idx >= 0 else None)
-
-    if all(p is not None for p in positions):
-        sorted_pairs = sorted(zip(positions, headings), key=lambda p: p[0])
-        for i, (pos, heading) in enumerate(sorted_pairs):
-            end = sorted_pairs[i + 1][0] if i + 1 < len(sorted_pairs) else len(text)
-            chunk = text[pos + len(heading): end]
-            result.append((heading, _bullets_from_text(chunk, max_items=4)))
-        order_map = {h: b for h, b in result}
-        return [(h, order_map.get(h, [])) for h in headings]
-
-    all_bullets = _bullets_from_text(text, max_items=len(headings) * 3)
-    per = max(1, len(all_bullets) // max(1, len(headings)))
-    out = []
-    for i, h in enumerate(headings):
-        chunk = all_bullets[i * per: (i + 1) * per] or ["Data not available"]
-        out.append((h, chunk))
-    return out
-
-
-def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
-    from reportlab.pdfbase.pdfmetrics import stringWidth
-    words = text.split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        candidate = f"{current} {word}".strip()
-        if stringWidth(candidate, font, size) <= max_w or not current:
-            current = candidate
-        else:
-            lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines
-
-
-def _string_w(text: str, font: str, size: float) -> float:
-    from reportlab.pdfbase.pdfmetrics import stringWidth
-    return stringWidth(text, font, size)
-
-
-def _alpha(color, alpha: float):
-    from reportlab.lib.colors import Color
-    return Color(color.red, color.green, color.blue, alpha=alpha)
 
 
 RENDERERS: dict[str, Callable[[SlideCanvas, dict], None]] = {
@@ -501,18 +475,9 @@ RENDERERS: dict[str, Callable[[SlideCanvas, dict], None]] = {
     "current_state": render_current_state,
     "visibility_gap": render_visibility_gap,
     "best_practices": render_best_practices,
-    "benchmarks_seo": render_benchmarks_seo,
-    "benchmarks_smm": render_benchmarks_smm,
-    "benchmarks_ppc": render_benchmarks_ppc,
+    "benchmarks": render_benchmarks,
+    "strategic_takeaways": render_strategic_takeaways,
     "growth_recommendations": render_growth_recommendations,
     "summary_next_steps": render_summary_next_steps,
     "contact": render_contact,
-    "executive_summary": render_executive_summary,
-    "positioning_audit": render_positioning_audit,
-    "performance_marketing": render_performance_marketing,
-    "seo_technical_audit": render_seo_technical_audit,
-    "smm_audit": render_smm_audit,
-    "conversion_funnel": render_conversion_funnel,
-    "strategic_recommendations": render_strategic_recommendations,
-    "kpis_targets": render_kpis_targets,
 }
