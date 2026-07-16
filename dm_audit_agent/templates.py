@@ -25,6 +25,11 @@ reference PDF 1:1). Selecting all three categories expands slides 2/3/4 to 3
 sub-slides each (+6 slides over the single-category case) and splits
 Strategic Takeaways out of the Benchmark slide into its own slide (+1),
 totalling 9 + 6 + 1 = 16 slides.
+
+Exception: the "Key Metrics Overview" slide (item 2) is never generated for
+the "ppc" category, since those metrics are manually entered and are not
+re-displayed as their own slide (they still feed every other slide). This
+subtracts one slide for any run where "ppc" is among the selected categories.
 """
 
 from __future__ import annotations
@@ -102,7 +107,13 @@ def resolve_included_slides(categories: list[str], excluded_slugs: list[str] | N
     "strategic_takeaways" only becomes its own slide when all three
     categories are selected; otherwise it is skipped here and its content is
     folded into the "benchmarks" slide by the renderer (single-category runs
-    total exactly 9 slides; all-three runs total exactly 16)."""
+    total exactly 9 slides; all-three runs total exactly 16).
+
+    The "metrics" (Key Metrics Overview) slide is additionally skipped for
+    the "ppc" category specifically, since PPC metrics are manually entered
+    by the user and should not be re-displayed as their own slide — PPC data
+    still flows into every other slide (current state, visibility gap,
+    benchmarks, growth recommendations, etc.) exactly as before."""
     excluded = set(excluded_slugs or []) | ALWAYS_EXCLUDED_SLUGS
     all_three_selected = set(categories) == set(CATEGORY_ORDER)
     result: list[dict] = []
@@ -115,6 +126,8 @@ def resolve_included_slides(categories: list[str], excluded_slugs: list[str] | N
             continue
         if group.per_category:
             for cat in categories:
+                if group.slug == "metrics" and cat == "ppc":
+                    continue
                 result.append({"slug": group.slug, "category": cat, "render_key": group.slug})
         else:
             result.append({"slug": group.slug, "category": None, "render_key": group.slug})

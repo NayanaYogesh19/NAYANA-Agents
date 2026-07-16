@@ -62,11 +62,17 @@ def _safe_scrape(scraper_fn, url: str, platform_label: str) -> dict:
         return {"platform": platform_label, "error": f"Scrape failed: {exc}"}
 
 
-def run_smm_metrics(company_name: str, domain: str) -> dict:
+def run_smm_metrics(company_name: str, domain: str, profile_urls: dict[str, str] | None = None) -> dict:
     """Returns a dict with per-platform raw scrape results plus a flattened
     "summary" of the numbers the Key Metrics slide actually displays. Safe to
     call even without an Apify token configured (all platforms will report
-    'Data not available' rather than raising)."""
+    'Data not available' rather than raising).
+
+    If `profile_urls` is given (the phased review flow's user-entered
+    Instagram/Facebook/LinkedIn/YouTube URLs), those are scraped directly —
+    Tavily-based auto-discovery is skipped entirely. If omitted, falls back
+    to the original auto-discovery behavior unchanged (used by the legacy
+    single-shot endpoint)."""
     if not Config.APIFY_API_TOKEN:
         empty = {"error": "Apify API token not configured"}
         return {
@@ -74,7 +80,8 @@ def run_smm_metrics(company_name: str, domain: str) -> dict:
             "summary": {"platforms_found": 0},
         }
 
-    profile_urls = discover_profile_urls(company_name, domain)
+    if profile_urls is None:
+        profile_urls = discover_profile_urls(company_name, domain)
 
     instagram = _safe_scrape(InstagramScraper().scrape, profile_urls["instagram"], "Instagram")
     facebook = _safe_scrape(FacebookScraper().scrape, profile_urls["facebook"], "Facebook")

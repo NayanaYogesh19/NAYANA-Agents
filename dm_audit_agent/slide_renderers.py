@@ -52,6 +52,28 @@ CATEGORY_GROWTH_BLOCK_TITLE = {
     "smm": "Brand Authority & Engagement",
 }
 
+# Current Digital State's first 3 quadrant headings, tailored per category so
+# they describe what's actually analyzed there instead of a generic
+# SEO-shaped label reused for PPC/SMM. The 4th quadrant ("<Category>
+# Challenges") is already category-labeled via CATEGORY_LABELS and stays as-is.
+CATEGORY_CURRENT_STATE_LABELS = {
+    "seo": {
+        "performance_overview": "Performance Overview",
+        "technical_gaps": "Technical Gaps",
+        "content_gaps": "Content Gaps",
+    },
+    "ppc": {
+        "performance_overview": "Ad Presence Overview",
+        "technical_gaps": "Ad Format & Platform Gaps",
+        "content_gaps": "Ad Creative Gaps",
+    },
+    "smm": {
+        "performance_overview": "Social Presence Overview",
+        "technical_gaps": "Platform Coverage Gaps",
+        "content_gaps": "Content & Engagement Gaps",
+    },
+}
+
 
 def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
     return _wrap_text(text, font, size, max_w)
@@ -126,21 +148,54 @@ def render_metrics(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
 
     y = sc.header("Key Metrics Overview", f"Live Snapshot of {ctx['company_name']}'s {cat_label} Performance")
 
+    # Skip a tile entirely if its value is genuinely null (e.g. an
+    # auto-fetched SMM platform that couldn't be found) rather than showing
+    # a "Data not available" tile — the grid reflows with fewer tiles.
     tile_specs = []
     for key, label in field_labels.items():
         value = metrics.get(key)
-        if key == "health_score" and value is not None:
+        if value is None or value == "":
+            continue
+        if key == "health_score":
             display = f"{fmt(value)}/100"
         else:
             display = fmt(value)
         color = STATUS_DANGER if key == "errors" else (STATUS_WARNING if key == "warnings" else tag_color)
         tile_specs.append((label, display, color))
 
-    cols = 4
+    # Choose a column count based on how many tiles actually have real data
+    # (never more columns than tiles), then stretch tile height to fill the
+    # available vertical space evenly across however many rows result — a
+    # sparse category (e.g. 1-2 auto-fetched SMM tiles) gets a small number
+    # of large tiles instead of a handful of small ones huddled at the top
+    # with the rest of the slide left blank.
     gap = 12
+    n = len(tile_specs)
+    if n == 0:
+        sc.footer(
+            f"Auto-fetched via social profile discovery & scraping (Snapshot Date: {datetime.now().strftime('%b %d, %Y')})."
+            if is_auto_fetched
+            else f"All numbers manually entered by the user (Snapshot Date: {datetime.now().strftime('%b %d, %Y')})."
+        )
+        return
+    # With very few real tiles (1-2), use fewer/wider columns so each tile
+    # gets real visual presence instead of sitting narrow on one side of a
+    # mostly-empty row. With 3+ tiles, cap at 4 columns as before.
+    cols = n if n <= 2 else min(4, n)
+    rows = -(-n // cols)  # ceil
+    content_h = y - MARGIN - 0.3 * inch
     tile_w = (PAGE_W - 2 * MARGIN - gap * (cols - 1)) / cols
-    tile_h = 1.35 * inch
-    top_row_y = y - tile_h
+    # kpi_tile's internal content (label/value/tag) is drawn at fixed offsets
+    # from the top and bottom of the tile, so stretching a tile's height far
+    # beyond its natural size just creates dead space INSIDE the card. Cap
+    # tile height at a comfortable size (larger when very few tiles, so they
+    # still carry real visual weight) and center the whole grid block
+    # vertically in the available area, so leftover space becomes even
+    # breathing room around the grid rather than empty page below it.
+    max_tile_h = 2.4 * inch if n <= 2 else 1.55 * inch
+    tile_h = min(max_tile_h, (content_h - gap * (rows - 1)) / rows)
+    grid_h = tile_h * rows + gap * (rows - 1)
+    top_row_y = y - (content_h - grid_h) / 2 - tile_h
     for i, (label, value, color) in enumerate(tile_specs):
         col = i % cols
         row = i // cols
@@ -157,17 +212,247 @@ def render_metrics(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------- generic 2x2 grid ----
+# Layout coordinates for N populated quadrants (1-4), reflowing so an empty
+# quadrant never renders as a blank/placeholder card. Each entry is a list of
+# (x_frac, y_frac, w_frac, h_frac) fractions of the available content area.
+def _estimate_bullet_lines(bullet: str, body_size: float, w: float, per_bullet_disclaimer: str | None = None) -> int:
+    """Mirrors SlideCanvas._draw_bullet_text's greedy word-wrap exactly (bold
+    'Label:' prefix + regular rest, wrapped as one continuous word stream
+    within width w) so we can predict how many lines a bullet will occupy at
+    a candidate body_size WITHOUT actually drawing it."""
+    colon_idx = bullet.find(":")
+    if 0 < colon_idx <= 60:
+        label = bullet[: colon_idx + 1]
+        rest = bullet[colon_idx + 1:].lstrip()
+    else:
+        label, rest = "", bullet
+
+    lines = 1
+    cursor_x = 0.0
+    for word_group, is_bold in ((label, True), (rest, False)) if label else ((rest, False),):
+        if not word_group:
+            continue
+        font = FONT_BOLD if is_bold else FONT_REGULAR
+        for word in word_group.split():
+            word_w = stringWidth(word + " ", font, body_size)
+            if cursor_x + word_w > w and cursor_x > 0:
+                lines += 1
+                cursor_x = 0.0
+            cursor_x += word_w
+
+    if per_bullet_disclaimer:
+        lines += len(_wrap_text(per_bullet_disclaimer, FONT_OBLIQUE, body_size - 1.5, w))
+    return lines
+
+
+def _estimate_text_block_height(w: float, heading: str, bullets: list[str], body_size: float,
+                                heading_size: float, gap: float, icon: str | None = None,
+                                per_bullet_disclaimer: str | None = None) -> float:
+    """Predicts the total vertical space SlideCanvas.text_block() will
+    consume for the given content at a candidate body_size, without drawing
+    anything — the estimator side of the auto-fit sizing search below."""
+    text_x_offset = (heading_size * 0.85) * 2 + 8 if icon else 0
+    height = heading_size + 8 + 14  # heading line + underline gap
+    bullet_w = w - 14 - text_x_offset
+    for bullet in bullets:
+        n_lines = _estimate_bullet_lines(bullet, body_size, bullet_w, per_bullet_disclaimer)
+        height += n_lines * gap + 3
+    return height
+
+
+def _auto_fit_body_size(w: float, h: float, heading: str, bullets: list[str], heading_size: float,
+                        icon: str | None = None, per_bullet_disclaimer: str | None = None,
+                        min_size: float = 7.0, max_size: float = 12.5, gap_ratio: float = 1.24) -> float:
+    """Picks the LARGEST body_size (within [min_size, max_size]) whose
+    estimated text_block height fits inside the available height h, so
+    sparse sections render with bigger, more readable text instead of always
+    using a small size assumed to fit worst-case-dense content. Falls back
+    to min_size if even that overflows (matches prior clamping behaviour —
+    text may then run tight but never explodes off the card)."""
+    if not bullets:
+        return max_size
+    best = min_size
+    size = max_size
+    while size >= min_size:
+        gap = size * gap_ratio
+        est_h = _estimate_text_block_height(w, heading, bullets, size, heading_size, gap, icon, per_bullet_disclaimer)
+        if est_h <= h:
+            best = size
+            break
+        size -= 0.2
+    else:
+        best = min_size
+    return round(best, 1)
+
+
+def _estimate_benefit_card_list_height(w: float, heading: str, cards: list[dict], title_size: float,
+                                       body_size: float, gap: float, heading_size: float,
+                                       icon: str | None = None) -> float:
+    """Mirrors SlideCanvas.benefit_card_list's line-wrapping (via _wrap_text,
+    same as it actually uses) to predict total height at a candidate size
+    without drawing — the estimator for growth-recommendation cards."""
+    height = _estimate_text_block_height(w, heading, [], heading_size, heading_size, heading_size, icon)
+    for card in cards:
+        title = card.get("title", "")
+        detail = card.get("detail", "")
+        benefit = card.get("benefit", "")
+        combined = f"{title}: {detail}" if title and detail else (title or detail)
+        n_lines = len(_wrap_text(combined, FONT_REGULAR, title_size, w - 24)) if combined else 0
+        height += n_lines * (title_size + 4)
+        if benefit:
+            n_lines = len(_wrap_text(f"→ {benefit}", FONT_OBLIQUE, body_size, w - 32))
+            height += n_lines * (body_size + 3)
+        height += gap + 8
+    return height
+
+
+def _auto_fit_benefit_card_size(w: float, h: float, heading: str, cards: list[dict], heading_size: float,
+                                icon: str | None = None, min_size: float = 6.5, max_size: float = 9.2) -> float:
+    """Same largest-that-fits search as _auto_fit_body_size, applied to the
+    title/detail/benefit card shape used by benefit_card_list."""
+    if not cards:
+        return max_size
+    size = max_size
+    while size >= min_size:
+        est_h = _estimate_benefit_card_list_height(w, heading, cards, size, size - 0.8, 3, heading_size, icon)
+        if est_h <= h:
+            return round(size, 1)
+        size -= 0.2
+    return min_size
+
+
+def _estimate_two_col_takeaways_height(col_w: float, items: list[str], body_size: float) -> float:
+    """Mirrors _benchmark_slide's two-column takeaways loop (items alternate
+    columns, each item's height is its wrapped line count * row_step, with a
+    4pt extra drop before each new left-column row) to predict the total
+    card height needed at a candidate body_size."""
+    row_step = body_size + 1.9
+    left_h = right_h = 0.0
+    for i, item in enumerate(items):
+        col = i % 2
+        n_lines = len(_wrap_text(item, FONT_REGULAR, body_size, col_w - 20))
+        item_h = n_lines * row_step
+        if col == 0:
+            if i > 0:
+                left_h += 4
+            left_h += item_h
+        else:
+            right_h += item_h
+    return max(left_h, right_h) + 48  # + heading/top padding
+
+
+def _auto_fit_takeaways_size(col_w: float, available_h: float, items: list[str],
+                             min_size: float = 7.0, max_size: float = 10.5) -> float:
+    if not items:
+        return max_size
+    size = max_size
+    while size >= min_size:
+        if _estimate_two_col_takeaways_height(col_w, items, size) <= available_h:
+            return round(size, 1)
+        size -= 0.2
+    return min_size
+
+
+def _quad_layout(n: int) -> list[tuple[float, float, float, float]]:
+    if n <= 0:
+        return []
+    if n == 1:
+        return [(0, 0, 1, 1)]
+    if n == 2:
+        return [(0, 0.5, 1, 0.5), (0, 0, 1, 0.5)]  # stacked, top then bottom
+    if n == 3:
+        return [(0, 0.5, 0.5, 0.5), (0.5, 0.5, 0.5, 0.5), (0, 0, 1, 0.5)]  # 2 up top, 1 full-width bottom
+    return [(0, 0.5, 0.5, 0.5), (0.5, 0.5, 0.5, 0.5), (0, 0, 0.5, 0.5), (0.5, 0, 0.5, 0.5)]  # full 2x2
+
+
 def render_quad_grid(sc: SlideCanvas, title: str, subtitle: str, quads: list[tuple[str, list[str], str]]) -> None:
-    """quads: list of (heading, bullets, icon) tuples."""
+    """quads: list of (heading, bullets, icon) tuples. Any quad with an empty
+    bullets list is skipped entirely (no placeholder card) — the remaining
+    populated quads reflow to fill the available space via _quad_layout, so
+    the slide never shows a blank or "Data not available" card."""
+    populated = [(heading, bullets, icon) for heading, bullets, icon in quads if bullets]
     y = sc.header(title, subtitle)
+    if not populated:
+        sc.footer()
+        return
+
     gap = 14
-    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
-    card_h = (y - MARGIN - gap - 0.3 * inch) / 2
-    positions = [(MARGIN, y - card_h), (MARGIN + card_w + gap, y - card_h),
-                 (MARGIN, y - 2 * card_h - gap), (MARGIN + card_w + gap, y - 2 * card_h - gap)]
-    for (heading, bullets, icon), (x, cy) in zip(quads[:4], positions):
+    content_w = PAGE_W - 2 * MARGIN
+    content_h = y - MARGIN - 0.3 * inch
+    n = len(populated)
+
+    if n <= 2:
+        # Stacked full-width card(s) — vertical space between them is freely
+        # reassignable, so split it proportionally to each card's actual
+        # estimated content need (at a shared body_size) instead of a fixed
+        # 50/50 split, which otherwise leaves a short section floating in a
+        # half-empty card while a longer one is unnecessarily cramped.
+        card_w = content_w
+        fit_sizes = [
+            _auto_fit_body_size(card_w - 32, content_h - 22, heading, bullets, heading_size=11.5, icon=icon,
+                               min_size=7.0, max_size=11.0)
+            for heading, bullets, icon in populated
+        ]
+        body_size = min(fit_sizes)
+        gap_size = round(body_size * 1.24, 1)
+
+        est_heights = [
+            _estimate_text_block_height(card_w - 32, heading, bullets, body_size, 11.5, gap_size, icon) + 44
+            for heading, bullets, icon in populated
+        ]
+        if n == 1:
+            heights = [max(1.1 * inch, min(est_heights[0], content_h))]
+        else:
+            avail = content_h - gap
+            min_h = 1.1 * inch
+            # Cap each card at its OWN estimated need (never stretch a short
+            # section to fill leftover space, which just creates a bigger
+            # blank gap inside that one card) — any genuinely unused space
+            # collapses out of the stack and becomes even margin around the
+            # whole block instead of dead space inside a specific card.
+            heights = [max(min_h, min(h_est, avail)) for h_est in est_heights]
+            if sum(heights) > avail:
+                scale = avail / sum(heights)
+                heights = [h * scale for h in heights]
+
+        used_h = sum(heights) + gap * (n - 1)
+        top_margin = max(0.0, (content_h - used_h) / 2)
+        cy = MARGIN + content_h - top_margin
+        for (heading, bullets, icon), card_h in zip(populated, heights):
+            cy -= card_h
+            sc.rounded_card(MARGIN, cy, card_w, card_h, radius=12)
+            sc.text_block(MARGIN + 16, cy + card_h - 22, card_w - 32, heading, bullets, body_size=body_size,
+                          heading_size=11.5, gap=gap_size, icon=icon)
+            cy -= gap
+        sc.footer()
+        return
+
+    layout = _quad_layout(n)
+
+    # Auto-fit: measure each populated card's available w/h and pick the
+    # largest body_size that fits its own bullets, then use the SMALLEST of
+    # those per-card sizes across the slide so every card stays visually
+    # consistent (no card looks tiny next to an oversized neighbor) while
+    # still growing overall when content is sparse.
+    card_dims = []
+    for (heading, bullets, icon), (xf, yf, wf, hf) in zip(populated, layout):
+        card_w = content_w * wf - (gap / 2 if wf < 1 else 0)
+        card_h = content_h * hf - (gap / 2 if hf < 1 else 0)
+        card_dims.append((card_w, card_h))
+
+    fit_sizes = [
+        _auto_fit_body_size(card_w - 32, card_h - 22, heading, bullets, heading_size=11.5, icon=icon,
+                           min_size=7.0, max_size=11.0)
+        for (heading, bullets, icon), (card_w, card_h) in zip(populated, card_dims)
+    ]
+    body_size = min(fit_sizes)
+    gap_size = round(body_size * 1.24, 1)
+
+    for (heading, bullets, icon), (xf, yf, wf, hf), (card_w, card_h) in zip(populated, layout, card_dims):
+        x = MARGIN + content_w * xf + (gap / 2 if xf > 0 else 0)
+        cy = MARGIN + content_h * yf + (gap / 2 if yf > 0 else 0)
         sc.rounded_card(x, cy, card_w, card_h, radius=12)
-        sc.text_block(x + 16, cy + card_h - 22, card_w - 32, heading, bullets, body_size=8.6, heading_size=11.5, gap=11.5, icon=icon)
+        sc.text_block(x + 16, cy + card_h - 22, card_w - 32, heading, bullets, body_size=body_size, heading_size=11.5, gap=gap_size, icon=icon)
     sc.footer()
 
 
@@ -177,8 +462,10 @@ def _section(ctx: dict[str, Any], category: str, slug: str) -> dict[str, list[st
 
 
 def _bullets(section: dict[str, list[str]], sub_key: str) -> list[str]:
-    values = section.get(sub_key) or []
-    return values if values else ["Data not available"]
+    """Returns the real bullet list, or an empty list if genuinely nothing
+    was generated — callers (render_quad_grid etc.) skip empty sections
+    entirely rather than showing a placeholder."""
+    return section.get(sub_key) or []
 
 
 # ------------------------------------------------------- current state ----
@@ -186,10 +473,11 @@ def render_current_state(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     category = ctx["category"]
     section = _section(ctx, category, "current_state")
     cat_label = CATEGORY_LABELS[category]
+    labels = CATEGORY_CURRENT_STATE_LABELS[category]
     quads = [
-        ("Performance Overview", _bullets(section, "performance_overview"), "▲"),
-        ("Technical Gaps", _bullets(section, "technical_gaps"), "★"),
-        ("Content Gaps", _bullets(section, "content_gaps"), "◆"),
+        (labels["performance_overview"], _bullets(section, "performance_overview"), "▲"),
+        (labels["technical_gaps"], _bullets(section, "technical_gaps"), "★"),
+        (labels["content_gaps"], _bullets(section, "content_gaps"), "◆"),
         (f"{cat_label} Challenges", _bullets(section, "visibility_challenges"), "●"),
     ]
     render_quad_grid(
@@ -205,53 +493,96 @@ def render_visibility_gap(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     section = _section(ctx, category, "visibility_gap")
     cat_label = CATEGORY_LABELS[category]
     halves = [
-        ("Client vs. Industry", _bullets(section, "client_vs_industry")),
-        ("Strategic Opportunities", _bullets(section, "strategic_opportunities")),
+        ("Client vs. Industry", _bullets(section, "client_vs_industry"), "▲"),
+        ("Strategic Opportunities", _bullets(section, "strategic_opportunities"), "●"),
     ]
+    populated = [(heading, bullets, icon) for heading, bullets, icon in halves if bullets]
+
     y = sc.header(f"Visibility Gap in {ctx['industry']}", cat_label)
+    if not populated:
+        sc.footer()
+        return
+
     gap = 16
-    card_w = (PAGE_W - 2 * MARGIN - gap) / 2
     card_h = y - MARGIN - 0.3 * inch
-    icons = ["▲", "●"]
     disclaimer = "All numbers are indicative estimates based on available tools."
-    # "Client vs. Industry" carries more bullets (5 vs 3) — use a slightly
-    # smaller body size there so all 5 fit comfortably in the same card height.
-    body_sizes = [7.8, 8.8]
-    for i, ((heading, bullets), icon, body_size) in enumerate(zip(halves, icons, body_sizes)):
-        x = MARGIN + i * (card_w + gap)
-        sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-        sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 26, card_w - 36, heading, bullets,
-                      body_size=body_size, heading_size=12.5, gap=body_size + 4.2, icon=icon,
+
+    if len(populated) == 1:
+        # Only one side has real content — use the full width for it.
+        heading, bullets, icon = populated[0]
+        card_w = PAGE_W - 2 * MARGIN
+        body_size = _auto_fit_body_size(card_w - 36, card_h - 26, heading, bullets, heading_size=12.5, icon=icon,
+                                        per_bullet_disclaimer=disclaimer, min_size=7.0, max_size=11.5)
+        gap_size = round(body_size * 1.24, 1)
+        # Cap the card at its own estimated content need instead of always
+        # filling the full slide height, so a short section doesn't render
+        # as a mostly-empty card — leftover space becomes even margin
+        # around a content-sized card instead.
+        est_h = _estimate_text_block_height(card_w - 36, heading, bullets, body_size, 12.5, gap_size, icon,
+                                            disclaimer) + 48
+        actual_card_h = max(1.3 * inch, min(est_h, card_h))
+        card_y = MARGIN + 0.3 * inch + (card_h - actual_card_h) / 2
+        sc.rounded_card(MARGIN, card_y, card_w, actual_card_h, radius=12)
+        sc.text_block(MARGIN + 18, card_y + actual_card_h - 26, card_w - 36, heading, bullets,
+                      body_size=body_size, heading_size=12.5, gap=gap_size, icon=icon,
                       per_bullet_disclaimer=disclaimer)
+    else:
+        card_w = (PAGE_W - 2 * MARGIN - gap) / 2
+        fit_sizes = [
+            _auto_fit_body_size(card_w - 36, card_h - 26, heading, bullets, heading_size=12.5, icon=icon,
+                               per_bullet_disclaimer=disclaimer, min_size=7.0, max_size=11.5)
+            for heading, bullets, icon in populated
+        ]
+        body_size = min(fit_sizes)
+        for i, (heading, bullets, icon) in enumerate(populated):
+            x = MARGIN + i * (card_w + gap)
+            sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
+            sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 26, card_w - 36, heading, bullets,
+                          body_size=body_size, heading_size=12.5, gap=round(body_size * 1.24, 1), icon=icon,
+                          per_bullet_disclaimer=disclaimer)
     sc.footer()
 
 
 # --------------------------------------------------- combined slides ----
 def render_best_practices(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     """Always renders as ONE slide regardless of how many categories are
-    selected — one card per selected category, each with its own 5-bullet
-    "Competitor Highlights" for that category, laid out side by side."""
+    selected — one card per selected category that actually has real
+    content (a category with zero genuinely-supported bullets is skipped
+    entirely, and the remaining cards reflow across the full slide width)."""
     categories = ctx["categories"]
     best_practices = ctx["content"].get("best_practices", {})
     industry = ctx["industry"]
     y = sc.header(f"Industry Best Practices in {industry}", "")
 
-    n = len(categories)
+    populated_categories = [cat for cat in categories if best_practices.get(cat)]
+    if not populated_categories:
+        sc.footer()
+        return
+
+    n = len(populated_categories)
     gap = 14
     card_w = (PAGE_W - 2 * MARGIN - gap * (n - 1)) / n
     card_h = y - MARGIN - 0.3 * inch
+    heading_size = (11.5 if n == 3 else 12.5) if n > 1 else 14
 
-    # Fewer bullets fit comfortably at the default size; scale body size down
-    # a little as more cards (narrower width) are shown side by side.
-    body_size = {1: 10.5, 2: 9.2, 3: 8.2}.get(n, 8.2)
+    headings = {
+        cat: (f"Competitor Highlights — {CATEGORY_SHORT_LABEL[cat]}" if n > 1 else "Competitor Highlights")
+        for cat in populated_categories
+    }
+    fit_sizes = [
+        _auto_fit_body_size(card_w - 36, card_h - 26, headings[cat], best_practices.get(cat), heading_size=heading_size,
+                           icon=CATEGORY_ICON.get(cat, "◆"), min_size=7.0, max_size=11.0)
+        for cat in populated_categories
+    ]
+    body_size = min(fit_sizes)
 
-    for i, cat in enumerate(categories):
+    for i, cat in enumerate(populated_categories):
         x = MARGIN + i * (card_w + gap)
-        bullets = best_practices.get(cat) or ["Data not available"]
-        heading = f"Competitor Highlights — {CATEGORY_SHORT_LABEL[cat]}" if n > 1 else "Competitor Highlights"
+        bullets = best_practices.get(cat)
+        heading = headings[cat]
         sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
         sc.text_block(x + 18, MARGIN + 0.3 * inch + card_h - 26, card_w - 36, heading, bullets,
-                      body_size=body_size, heading_size=(11.5 if n == 3 else 12.5) if n > 1 else 14, gap=body_size + 4,
+                      body_size=body_size, heading_size=heading_size, gap=round(body_size * 1.24, 1),
                       icon=CATEGORY_ICON.get(cat, "◆"))
     sc.footer()
 
@@ -267,36 +598,75 @@ def _benchmark_slide(sc: SlideCanvas, ctx: dict[str, Any], include_takeaways: bo
 
     gap = 16
     card_w = (PAGE_W - 2 * MARGIN - gap) / 2
-    top_card_h = (y - MARGIN - gap - (1.6 * inch if include_takeaways else 0.3 * inch)) if include_takeaways else (y - MARGIN - 0.3 * inch)
+    takeaways = benchmarks.get("takeaways") or []
+    # Only reserve space for the takeaways card if it will actually be drawn
+    # (both include_takeaways=True AND there's genuinely real content for
+    # it) — otherwise the tables above expand to use the full slide height.
+    show_takeaways = include_takeaways and bool(takeaways)
+    full_h = y - MARGIN - 0.3 * inch
+    if show_takeaways:
+        takeaways_col_w = (PAGE_W - 2 * MARGIN - 36) / 2
+        takeaways_font_size = _auto_fit_takeaways_size(takeaways_col_w, full_h - gap, takeaways,
+                                                        min_size=7.5, max_size=10.5)
+        needed_ty_h = _estimate_two_col_takeaways_height(takeaways_col_w, takeaways, takeaways_font_size)
+        # Reserve only as much height as the takeaways content actually
+        # needs (clamped to a sane minimum/maximum) so the tables above
+        # expand to fill the rest instead of leaving fixed blank space.
+        ty_card_h = max(1.1 * inch, min(needed_ty_h, full_h - gap - 1.5 * inch))
+        top_card_h = full_h - gap - ty_card_h
+    else:
+        top_card_h = full_h
 
     left_headers = client_table.get("headers") or ["Metric", "Current Status", "Trend"]
-    left_rows = client_table.get("rows") or [["Data not available", "Data not available", "Data not available"]]
+    left_rows = client_table.get("rows") or []
     right_headers = industry_table.get("headers") or ["Metric", company, "Industry"]
-    right_rows = industry_table.get("rows") or [["Data not available", "Data not available", "Data not available"]]
+    right_rows = industry_table.get("rows") or []
 
-    sc.rounded_card(MARGIN, y - top_card_h, card_w, top_card_h, radius=12)
+    # Scale row height to the available card height (up to a comfortable
+    # cap) so a table with few real rows uses taller rows rather than
+    # leaving blank space below a handful of default-height rows. If even
+    # the capped row height doesn't consume the full card (very few rows),
+    # shrink the card itself to the table's real content need and center it
+    # in the available slot, so leftover space becomes even margin instead
+    # of a mostly-empty card.
+    max_rows = max(len(left_rows), len(right_rows), 1)
+    row_h = 26.0
+    table_top_y = y
+    card_top_y = y
+    if not show_takeaways:
+        # No competing takeaways card below — safe to shrink the table cards
+        # to their real content need and center the pair in the available
+        # slide height, rather than always stretching to fill it.
+        table_content_h = 44 + row_h * (max_rows + 1) + 14
+        fitted_card_h = max(1.6 * inch, min(table_content_h, top_card_h))
+        if fitted_card_h < top_card_h:
+            y_offset = (top_card_h - fitted_card_h) / 2
+            table_top_y = y - y_offset
+            card_top_y = y - y_offset
+        top_card_h = fitted_card_h
+
+    sc.rounded_card(MARGIN, card_top_y - top_card_h, card_w, top_card_h, radius=12)
     c = sc.c
     c.setFillColor(ACCENT_PURPLE)
     c.setFont(FONT_BOLD, 12)
-    c.drawString(MARGIN + 18, y - 26, f"{company} Technical Performance")
-    sc.table(MARGIN + 18, y - 44, card_w - 36, left_headers, left_rows, row_h=20)
+    c.drawString(MARGIN + 18, table_top_y - 26, f"{company} Technical Performance")
+    sc.table(MARGIN + 18, table_top_y - 44, card_w - 36, left_headers, left_rows, row_h=row_h)
 
     rx = MARGIN + card_w + gap
-    sc.rounded_card(rx, y - top_card_h, card_w, top_card_h, radius=12)
+    sc.rounded_card(rx, card_top_y - top_card_h, card_w, top_card_h, radius=12)
     c.setFillColor(ACCENT_PURPLE)
     c.setFont(FONT_BOLD, 12)
-    c.drawString(rx + 18, y - 26, "Industry Comparison")
-    sc.table(rx + 18, y - 44, card_w - 36, right_headers, right_rows, row_h=20)
+    c.drawString(rx + 18, table_top_y - 26, "Industry Comparison")
+    sc.table(rx + 18, table_top_y - 44, card_w - 36, right_headers, right_rows, row_h=row_h)
 
-    if include_takeaways:
-        takeaways = benchmarks.get("takeaways") or ["Data not available"]
+    if show_takeaways:
         ty_card_y = MARGIN
-        ty_card_h = y - top_card_h - gap - MARGIN
         sc.rounded_card(MARGIN, ty_card_y, PAGE_W - 2 * MARGIN, ty_card_h, radius=12)
         c.setFillColor(ACCENT_PURPLE)
         c.setFont(FONT_BOLD, 12)
         c.drawString(MARGIN + 18, ty_card_y + ty_card_h - 26, "Strategic Takeaways & Opportunities")
-        col_w = (PAGE_W - 2 * MARGIN - 36) / 2
+        col_w = takeaways_col_w
+        row_step = takeaways_font_size + 1.9
         ty = ty_card_y + ty_card_h - 48
         for i, item in enumerate(takeaways):
             col = i % 2
@@ -307,12 +677,12 @@ def _benchmark_slide(sc: SlideCanvas, ctx: dict[str, Any], include_takeaways: bo
             c.setFillColor(ACCENT_PURPLE)
             c.circle(x + 2, yy + 3, 1.5, fill=1, stroke=0)
             c.setFillColor(NAVY)
-            c.setFont(FONT_REGULAR, 8.6)
-            for line in _wrap(item, FONT_REGULAR, 8.6, col_w - 20):
+            c.setFont(FONT_REGULAR, takeaways_font_size)
+            for line in _wrap(item, FONT_REGULAR, takeaways_font_size, col_w - 20):
                 c.drawString(x + 10, yy, line)
-                yy -= 11
+                yy -= row_step
             if col == 1:
-                ty = min(ty, yy) - 4
+                ty = min(ty, yy) - 3
     sc.footer()
 
 
@@ -322,13 +692,19 @@ def render_benchmarks(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
 
 def render_strategic_takeaways(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     benchmarks = ctx["content"].get("benchmarks", {})
-    takeaways = benchmarks.get("takeaways") or ["Data not available"]
+    takeaways = benchmarks.get("takeaways") or []
     y = sc.header("Strategic Takeaways & Opportunities", ctx["company_name"])
+    if not takeaways:
+        sc.footer()
+        return
     card_w = PAGE_W - 2 * MARGIN
     card_h = y - MARGIN - 0.3 * inch
+    heading = "Key Opportunities Across the Board"
+    body_size = _auto_fit_body_size(card_w - 40, card_h - 30, heading, takeaways, heading_size=14, icon="★",
+                                    min_size=8.0, max_size=12.5)
     sc.rounded_card(MARGIN, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
-    sc.text_block(MARGIN + 20, MARGIN + 0.3 * inch + card_h - 30, card_w - 40, "Key Opportunities Across the Board", takeaways,
-                  body_size=9.5, heading_size=14, gap=15, icon="★")
+    sc.text_block(MARGIN + 20, MARGIN + 0.3 * inch + card_h - 30, card_w - 40, heading, takeaways,
+                  body_size=body_size, heading_size=14, gap=round(body_size * 1.3, 1), icon="★")
     sc.footer()
 
 
@@ -345,14 +721,20 @@ def render_growth_recommendations(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     gap = 16
     card_w = (PAGE_W - 2 * MARGIN - gap * (n - 1)) / n
     card_h = y - MARGIN - 0.3 * inch
-    title_size = {1: 12.5, 2: 12.5, 3: 11}.get(n, 11)
-
-    body_size = {1: 9.2, 2: 9.2, 3: 8.2}.get(n, 8.2)
     heading_size = {1: 13, 2: 13, 3: 11}.get(n, 11)
+
+    block_titles = {cat: CATEGORY_GROWTH_BLOCK_TITLE.get(cat, cat.upper()) for cat in categories}
+    fit_sizes = [
+        _auto_fit_benefit_card_size(card_w - 36, card_h - 24, block_titles[cat], growth.get(cat) or [],
+                                    heading_size=heading_size, icon=CATEGORY_ICON.get(cat, "●"),
+                                    min_size=6.5, max_size=9.5)
+        for cat in categories
+    ]
+    body_size = min(fit_sizes) if fit_sizes else 9.5
     for i, cat in enumerate(categories):
         x = MARGIN + i * (card_w + gap)
         cards = growth.get(cat) or []
-        block_title = CATEGORY_GROWTH_BLOCK_TITLE.get(cat, cat.upper())
+        block_title = block_titles[cat]
         sc.rounded_card(x, MARGIN + 0.3 * inch, card_w, card_h, radius=12)
         sc.benefit_card_list(x + 18, MARGIN + 0.3 * inch + card_h - 24, card_w - 36,
                             block_title, cards, icon=CATEGORY_ICON.get(cat, "●"),

@@ -352,37 +352,55 @@ class SlideCanvas:
         self.rounded_card(x, y, w, h, radius=10, fill=WHITE, border=BORDER, accent_top=top_accent)
         inner_w = w - 24
 
+        # Scale label/value font sizes with tile height (beyond the tile's
+        # natural ~1.35" size) so a taller tile — used when few tiles share a
+        # slide — carries genuinely larger content instead of stretching
+        # blank space between a fixed-size label/value/tag stack.
+        natural_h = 1.35 * inch
+        scale = max(1.0, min(1.55, h / natural_h))
+        label_size = 8 * scale
+        max_value_size = 22 * scale
+        min_value_size = 10 * scale
+
         c.setFillColor(TEXT_MUTED)
-        c.setFont(FONT_BOLD, 8)
-        for line in _wrap_text(label.upper(), FONT_BOLD, 8, inner_w)[:1]:
-            c.drawString(x + 12, y + h - 22, line)
+        c.setFont(FONT_BOLD, label_size)
+        for line in _wrap_text(label.upper(), FONT_BOLD, label_size, inner_w)[:1]:
+            c.drawString(x + 12, y + h - 22 * scale, line)
 
         c.setFillColor(NAVY)
         value_text = str(value)
         # Auto-shrink long values (e.g. "Food and Beverage", "Authentic, warm,
         # and approachable") instead of overflowing the tile — short numeric
-        # values (e.g. "4.9K") keep the original large 22pt size.
-        size = 22
-        min_size = 10
-        while size > min_size and stringWidth(value_text, FONT_BOLD, size) > inner_w:
+        # values (e.g. "4.9K") keep the scaled large size.
+        size = max_value_size
+        while size > min_value_size and stringWidth(value_text, FONT_BOLD, size) > inner_w:
             size -= 1
         c.setFont(FONT_BOLD, size)
         lines = _wrap_text(value_text, FONT_BOLD, size, inner_w)
         if len(lines) > 2:
             lines = lines[:2]
             lines[-1] = lines[-1].rstrip() + "…"
-        value_y = y + h - 40 if len(lines) > 1 else y + h - 52
         line_gap = size + 4
+        value_block_h = line_gap * len(lines)
+        # Center the value block in the space between the label and the tag
+        # (rather than anchoring near the top) so extra tile height becomes
+        # balanced whitespace around the content, not a dead gap below it.
+        top_of_value_area = y + h - 22 * scale - label_size - 6
+        bottom_of_value_area = y + (32 if tag else 12) * scale
+        value_area_h = top_of_value_area - bottom_of_value_area
+        value_y = top_of_value_area - max(0.0, (value_area_h - value_block_h) / 2) - size * 0.8
         for i, line in enumerate(lines):
             c.drawString(x + 12, value_y - i * line_gap, line)
 
         if tag:
-            tag_w = stringWidth(tag, FONT_BOLD, 7.5) + 14
+            tag_size = 7.5 * scale
+            tag_w = stringWidth(tag, FONT_BOLD, tag_size) + 14
+            tag_h = 16 * scale
             c.setFillColor(Color(tag_color.red, tag_color.green, tag_color.blue, alpha=0.12))
-            c.roundRect(x + 12, y + 10, tag_w, 16, 8, fill=1, stroke=0)
+            c.roundRect(x + 12, y + 10 * scale, tag_w, tag_h, tag_h / 2, fill=1, stroke=0)
             c.setFillColor(tag_color)
-            c.setFont(FONT_BOLD, 7.5)
-            c.drawString(x + 18, y + 15, tag)
+            c.setFont(FONT_BOLD, tag_size)
+            c.drawString(x + 18, y + 10 * scale + tag_h * 0.3, tag)
 
     def table(self, x: float, y: float, w: float, headers: list[str], rows: list[list[str]],
               col_widths: Optional[list[float]] = None, row_h: float = 20,

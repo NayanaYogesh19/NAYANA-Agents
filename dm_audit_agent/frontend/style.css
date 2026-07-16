@@ -411,6 +411,35 @@ body {
   border: 1px solid rgba(220,38,38,0.2);
 }
 
+/* Per-category review narrative text */
+.narrative-box {
+  margin: 1rem 0 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.875rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.narrative-textarea {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.narrative-textarea:focus {
+  outline: none;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
 /* Validation popup toast */
 .validation-toast {
   position: fixed;
