@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter
 
-from pdf_processing.extract_pdf import extract_pdf_text
+from pdf_processing.extract_pdf import get_cached_pdf_text
 from config.storage import NOTICES_DIR, REPORTS_DIR, SESSION_PATH
 from pdf_processing.extract_board import (
     extract_board_of_directors,
@@ -32,19 +32,7 @@ def _load_pdf_text_sync() -> tuple:
     pdf_path = session.get("pdf_path", "")
     if not os.path.exists(pdf_path):
         return None, None, "Uploaded PDF not found."
-    # Use cached PDF text from session if already extracted (avoids re-reading large PDFs)
-    cached_text = session.get("_cached_pdf_text", "")
-    if cached_text:
-        return cached_text, pdf_path, None
-    text = extract_pdf_text(pdf_path)
-    # Cache it back to session so other endpoints don't re-extract
-    try:
-        session["_cached_pdf_text"] = text
-        with open(session_path, "w", encoding="utf-8") as f:
-            json.dump(session, f, indent=4)
-    except Exception:
-        pass
-    return text, pdf_path, None
+    return get_cached_pdf_text(pdf_path), pdf_path, None
 
 
 async def _load_pdf_text():

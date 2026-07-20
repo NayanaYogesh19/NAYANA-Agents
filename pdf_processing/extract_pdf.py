@@ -1,5 +1,13 @@
-﻿import re
+﻿import os
+import re
 import pdfplumber
+
+# In-process cache for the (potentially large) extracted text of the current
+# PDF, keyed by (path, mtime, size) so a fresh upload to the same path — every
+# upload reuses "latest.pdf" — naturally invalidates it. Avoids persisting this
+# blob into session.json, where every unrelated session save would otherwise
+# read-parse-rewrite the whole thing.
+_text_cache: dict = {}
 
 
 def extract_pdf_text(pdf_path):
@@ -13,6 +21,22 @@ def extract_pdf_text(pdf_path):
     if not text.strip():
         text = _extract_with_pdfplumber(pdf_path)
     return _normalize(text)
+
+
+def get_cached_pdf_text(pdf_path: str) -> str:
+    """
+    Return extract_pdf_text(pdf_path), reusing an in-memory result for the
+    current process if the file hasn't changed since it was last extracted.
+    """
+    st = os.stat(pdf_path)
+    key = (pdf_path, st.st_mtime_ns, st.st_size)
+    cached = _text_cache.get(key)
+    if cached is not None:
+        return cached
+    text = extract_pdf_text(pdf_path)
+    _text_cache.clear()  # single active notice at a time — no need to keep older entries
+    _text_cache[key] = text
+    return text
 
 
 def _extract_with_pypdf(pdf_path, max_pages=None):

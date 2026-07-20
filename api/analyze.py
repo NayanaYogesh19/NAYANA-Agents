@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter
 
-from pdf_processing.extract_pdf import extract_pdf_text
+from pdf_processing.extract_pdf import get_cached_pdf_text
 from resolution_extractor.extract_resolutions import extract_resolutions
 
 from policy_retrieval.retrieve_policy import get_policy
@@ -29,31 +29,9 @@ async def _run_sync(fn, *args):
     return await loop.run_in_executor(_executor, fn, *args)
 
 
-def _load_cached_text(pdf_path: str, session_path: str = SESSION_PATH) -> str:
-    """Return cached PDF text from session if available, else extract and cache it."""
-    try:
-        with open(session_path, "r", encoding="utf-8") as f:
-            session = json.load(f)
-        cached = session.get("_cached_pdf_text", "")
-        if cached:
-            return cached
-    except Exception:
-        pass
-    text = extract_pdf_text(pdf_path)
-    try:
-        with open(session_path, "r", encoding="utf-8") as f:
-            session = json.load(f)
-        session["_cached_pdf_text"] = text
-        with open(session_path, "w", encoding="utf-8") as f:
-            json.dump(session, f, indent=4)
-    except Exception:
-        pass
-    return text
-
-
 def _extract_all_resolutions(pdf_path: str) -> tuple[list, list]:
     """Blocking: extract text, resolutions, enrich each one. Returns (resolutions, report)."""
-    text = _load_cached_text(pdf_path)
+    text = get_cached_pdf_text(pdf_path)
     resolutions = extract_resolutions(text)
 
     for r in resolutions:
