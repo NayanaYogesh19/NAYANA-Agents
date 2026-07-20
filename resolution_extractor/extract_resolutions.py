@@ -24,7 +24,7 @@ _EXPLICIT_HEADER = re.compile(
     r"(?:^|\n)\s*"
     r"(?:ITEM\s*NO\.?\s*\d+|Item\s+[Nn]o\.?\s*\d+|ITEM\s+\d+|"
     r"RESOLUTION\s+NO\.?\s*\d+|AGENDA\s+ITEM\s*\d+|"
-    r"Resolution\s+[Nn]o\.?\s*\d+|Item\s+\d+\s*[\.:\-])",
+    r"Resolution\s+[Nn]o\.?\s*\d+|Item\s+\d+\s*[\.:\-–—])",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -43,7 +43,7 @@ _SPECIAL  = re.compile(r"\bSPECIAL\s+RESOLUTION\b|\bType of Resolution:\s*Specia
 
 # InGovern report format: "Resolution No. 1: Title"
 _INGOVERN_HEADER = re.compile(
-    r"(?:^|\n)Resolution\s+No\.?\s*(\d{1,2})\s*[:\-]\s*(.{5,200}?)(?=\n)",
+    r"(?:^|\n)Resolution\s+No\.?\s*(\d{1,2})\s*[:\-–—]\s*(.{5,200}?)(?=\n)",
     re.MULTILINE | re.IGNORECASE,
 )
 
@@ -277,6 +277,7 @@ def _find_notice_end(text: str, start: int) -> int:
         r"(?:^|\n)NOTES\s*:",
         r"(?:^|\n)Notes\s*:",
         r"(?:^|\n)Explanatory\s+Statement",
+        r"(?:^|\n)Statement\s+pursuant\s+to\s+Section\s+102",
     ])
     return start + pos if pos is not None else len(text)
 
@@ -309,7 +310,14 @@ def _split_into_blocks(text: str) -> list:
     if numbered_matches:
         return _split_by_numbered(notice_text, numbered_matches)
 
-    # Final fallback: try explicit in full text
+    # A single match within the bounded notice section is still safer than
+    # scanning the whole document, which can pick up the same "Item No. X"
+    # phrase repeated later in the Explanatory Statement/Annexures and
+    # corrupt block boundaries (merged or duplicated resolutions).
+    if explicit_matches:
+        return _split_by_matches(notice_text, explicit_matches)
+
+    # Absolute last resort: scan the full unbounded document
     explicit_matches = list(_EXPLICIT_HEADER.finditer(text))
     if explicit_matches:
         return _split_by_matches(text, explicit_matches)
@@ -369,52 +377,81 @@ def _extract_explanation(block: str) -> str:
     return ""
 
 
+# Item-number reference, standing alone on its line — nothing but an optional
+# colon/dash between the number and the line break. This is the strongest
+# signal of a genuine section heading (e.g. "Item no.5\n<content follows>").
+_ITEM_REF_HEADING_RE = re.compile(
+    r"(?:^|\n)\s*(?:ITEM|Item)\s*(?:No\.?|Number)?\s*(\d{1,2})\s*[:\-–—]?\s*(?=\n|$)",
+    re.MULTILINE | re.IGNORECASE,
+)
+# Item-number reference anchored at the start of a line/paragraph, but with
+# more text following on the same line — a medium-confidence signal (PDF
+# line-wrap means "start of line" isn't always a real paragraph break).
+_ITEM_REF_LINE_RE = re.compile(
+    r"(?:^|\n)\s*(?:ITEM|Item)\s*(?:No\.?|Number)?\s*(\d{1,2})\b",
+    re.MULTILINE | re.IGNORECASE,
+)
+# Same reference, but anywhere in the text — most real documents point back
+# to an item inline ("...as set out in Item No. 5 of the Notice...") rather
+# than printing a standalone heading at all. Weakest signal, used only when
+# nothing better exists for that item number.
+_ITEM_REF_INLINE_RE = re.compile(
+    r"(?:ITEM|Item)\s*(?:No\.?|Number)?\s*(\d{1,2})\b",
+    re.IGNORECASE,
+)
+
+
 def extract_explanatory_statements(full_text: str) -> dict[int, str]:
     """
-    Extract per-item explanatory statements from the formal
-    'Explanatory Statement pursuant to Section 102' section of the notice.
-    Returns {item_number: explanation_text}.
+    Extract per-item supporting material — explanatory statement, relevant
+    notes, annexures — from everything AFTER the notice/agenda section.
+    Returns {item_number: text}.
+
+    Real notices almost never mark each item's explanation with a clean,
+    uniformly-punctuated "Item No. X:" heading — they reference the item
+    inline, repeatedly, in flowing prose ("...as set out in Item No. 5 of
+    the Notice...", "Item No.5\\nTamilnadu Industrial Development..."). So
+    instead of requiring a strict header pattern, this finds where each
+    distinct item number is FIRST referenced (preferring a mention that
+    starts a line/paragraph over a mid-sentence one) and uses those ordered
+    first-mention positions as section boundaries — the span from one
+    item's first mention to the next item's first mention is treated as
+    that item's supporting material.
     """
-    # Find the explanatory statement section
-    expl_start = -1
-    for pat in [
-        r"Explanatory\s+Statement\s+pursuant\s+to\s+Section\s+102",
-        r"EXPLANATORY\s+STATEMENT",
-        r"Statement\s+pursuant\s+to\s+Section\s+102",
-    ]:
-        m = re.search(pat, full_text, re.IGNORECASE)
-        if m:
-            expl_start = m.start()
-            break
-
-    if expl_start < 0:
+    notice_start = _find_notice_start(full_text)
+    notice_end   = _find_notice_end(full_text, notice_start)
+    tail = full_text[notice_end:]
+    if not tail.strip():
         return {}
 
-    expl_text = full_text[expl_start:]
+    # Tier 1: genuine standalone heading lines (strongest signal)
+    first_seen: dict[int, int] = {}
+    for m in _ITEM_REF_HEADING_RE.finditer(tail):
+        num = int(m.group(1))
+        if num not in first_seen:
+            first_seen[num] = m.start()
 
-    # Split by "Item No. X:" markers
-    item_pat = re.compile(
-        r"(?:^|\n)\s*(?:ITEM|Item)\s+No\.?\s*(\d{1,2})\s*[:\-]",
-        re.MULTILINE,
-    )
-    item_matches = list(item_pat.finditer(expl_text))
-    if not item_matches:
+    # Tier 2: line-start mentions, for numbers with no heading-style match
+    for m in _ITEM_REF_LINE_RE.finditer(tail):
+        num = int(m.group(1))
+        if num not in first_seen:
+            first_seen[num] = m.start()
+
+    # Tier 3: any inline mention at all, for numbers still not found
+    for m in _ITEM_REF_INLINE_RE.finditer(tail):
+        num = int(m.group(1))
+        if num not in first_seen:
+            first_seen[num] = m.start()
+
+    if not first_seen:
         return {}
 
+    ordered = sorted(first_seen.items(), key=lambda kv: kv[1])
     result = {}
-    for i, m in enumerate(item_matches):
-        num   = int(m.group(1))
-        start = m.end()
-        end   = item_matches[i + 1].start() if i + 1 < len(item_matches) else len(expl_text)
-        chunk = expl_text[start:end].strip()
-        # Trim boilerplate "The Board recommends..." tail
-        tail = re.search(
-            r"The Board (?:of Directors )?recommends?.{0,200}for approval",
-            chunk, re.IGNORECASE | re.DOTALL,
-        )
-        if tail:
-            chunk = chunk[:tail.end()]
-        result[num] = re.sub(r"\s+", " ", chunk).strip()[:5000]
+    for i, (num, start) in enumerate(ordered):
+        end   = ordered[i + 1][1] if i + 1 < len(ordered) else len(tail)
+        chunk = tail[start:end].strip()
+        result[num] = re.sub(r"\s+", " ", chunk).strip()[:8000]
 
     return result
 

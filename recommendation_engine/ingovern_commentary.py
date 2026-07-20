@@ -458,7 +458,11 @@ def generate_ingovern_commentary(
     combined_text = res_text
     if expl_text and expl_text not in res_text:
         combined_text = res_text + "\n\n--- EXPLANATORY STATEMENT ---\n" + expl_text
-    safe_res["resolution_text"] = combined_text[:6000] + ("…" if len(combined_text) > 6000 else "")
+    # Raised from 6,000: explanatory statements now flow through in full (see
+    # resolution_extractor fix), and routine items with no explanation stay
+    # short regardless — this cap only bites on genuinely long special items.
+    combined_text = combined_text[:14000] + ("…" if len(combined_text) > 14000 else "")
+    safe_res["resolution_text"] = combined_text
 
     cover_hint = (
         f"Pre-printed InGovern recommendation: {cover_rec}" if cover_rec
