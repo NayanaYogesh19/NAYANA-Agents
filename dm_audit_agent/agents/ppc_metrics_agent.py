@@ -16,12 +16,18 @@ agents/smm_metrics_agent.py.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
+from langchain_core.messages import HumanMessage
+
+from agents.llm import get_llm
 from config import Config
 from tools.ppc_scrapers.google_ads_scraper import GoogleAdsScraper
 from tools.ppc_scrapers.linkedin_ads_scraper import LinkedInAdsScraper
 from tools.ppc_scrapers.meta_ads_scraper import MetaAdsScraper
+
+logger = logging.getLogger("dm_audit_agent")
 
 
 def _safe_scrape(scraper_fn, arg: str, platform_label: str) -> dict:
@@ -31,6 +37,74 @@ def _safe_scrape(scraper_fn, arg: str, platform_label: str) -> dict:
         return scraper_fn(arg)
     except Exception as exc:
         return {"platform": platform_label, "error": f"Scrape failed: {exc}"}
+
+
+def _read_ad_text_from_image(image_url: str) -> dict | None:
+    """Some real ads (e.g. Google Ads Transparency Center 'TEXT' format ads)
+    have NO text in the scraper's structured data — the actual headline and
+    description only exist baked into the ad's rendered preview image. Uses
+    the shared vision-capable LLM to read the real words off that image
+    (never invents copy — if the model can't make out real text, it
+    returns None so the caller falls back to omitting the headline, exactly
+    like a genuinely textless ad, rather than fabricating anything)."""
+    try:
+        llm = get_llm(temperature=0)
+        message = HumanMessage(content=[
+            {
+                "type": "text",
+                "text": (
+                    "This is an advertisement image. Read ONLY the literal text that "
+                    "is visually printed in the image itself (headline and body/"
+                    "description sentence). Reply in exactly this format, using the "
+                    "exact words shown, nothing invented or paraphrased:\n"
+                    "HEADLINE: <text or NONE if no readable headline text>\n"
+                    "DESCRIPTION: <text or NONE if no readable description text>\n"
+                    "If the image contains no legible text at all, reply exactly "
+                    "\"HEADLINE: NONE\\nDESCRIPTION: NONE\"."
+                ),
+            },
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ])
+        response = llm.invoke([message])
+        text = (response.content or "").strip()
+
+        headline, description = None, None
+        for line in text.splitlines():
+            if line.upper().startswith("HEADLINE:"):
+                val = line.split(":", 1)[1].strip()
+                headline = val if val and val.upper() != "NONE" else None
+            elif line.upper().startswith("DESCRIPTION:"):
+                val = line.split(":", 1)[1].strip()
+                description = val if val and val.upper() != "NONE" else None
+
+        if headline or description:
+            return {"headline": headline, "description": description}
+        return None
+    except Exception as exc:
+        logger.warning("Ad image text extraction failed for %s: %s", image_url, exc)
+        return None
+
+
+def _fill_missing_text_from_image(ad: dict) -> dict:
+    """If an ad has real creative text already (from the scraper), leave it
+    untouched. Only falls back to reading the ad's own image when the
+    scraper genuinely found none — so this never overrides or fakes text
+    that's already real, and never fabricates text for ads with no image
+    either (those are just left as before)."""
+    if ad.get("headline") or ad.get("primary_text"):
+        return ad
+    image_url = ad.get("creative_image_url")
+    if not image_url:
+        return ad
+    extracted = _read_ad_text_from_image(image_url)
+    if not extracted:
+        return ad
+    ad = dict(ad)
+    if extracted.get("headline"):
+        ad["headline"] = extracted["headline"]
+    if extracted.get("description"):
+        ad["primary_text"] = extracted["description"]
+    return ad
 
 
 def run_ppc_metrics(google_ads_url: str, meta_ads_url: str, linkedin_company_name: str) -> dict:
@@ -84,6 +158,7 @@ def _build_summary(results: dict) -> dict:
 
     def sample_ads(platform_data: dict, n: int = 5) -> list[dict]:
         ads = platform_data.get("ads") or []
+        sampled = [_fill_missing_text_from_image(ad) for ad in ads[:n]]
         return [
             {
                 "ad_library_id": ad.get("ad_library_id"),
@@ -96,7 +171,7 @@ def _build_summary(results: dict) -> dict:
                 "date_ended": ad.get("date_ended"),
                 "ad_status": ad.get("ad_status"),
             }
-            for ad in ads[:n]
+            for ad in sampled
         ]
 
     return {

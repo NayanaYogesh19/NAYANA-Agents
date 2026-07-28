@@ -52,6 +52,31 @@ class MetaAdsScraper:
             video_url = item.get("videoUrl") or item.get("video_url")
             content_type = "video" if video_url else ("image" if image_url else "text")
 
+            # The actor's real ad creative text often lives nested under
+            # "snapshot" (snapshot.body.text / snapshot.title /
+            # snapshot.link_description), and carousel ads split copy across
+            # snapshot.cards[] — not just flat "body"/"title" fields. Check
+            # those nested locations too instead of falling back to nothing.
+            snapshot = item.get("snapshot") or {}
+            snapshot_body = snapshot.get("body")
+            snapshot_body_text = snapshot_body.get("text") if isinstance(snapshot_body, dict) else snapshot_body
+            cards = snapshot.get("cards") or []
+            card_bodies = [c.get("body") for c in cards if c.get("body")]
+            card_titles = [c.get("title") for c in cards if c.get("title")]
+
+            headline = (
+                item.get("title") or item.get("headline")
+                or snapshot.get("title")
+                or (card_titles[0] if card_titles else None)
+            )
+            primary_text = (
+                item.get("body") or item.get("adText")
+                or snapshot_body_text
+                or snapshot.get("link_description")
+                or (" / ".join(card_bodies) if card_bodies else None)
+                or headline
+            )
+
             ads.append({
                 "ad_library_id": item.get("adArchiveID") or item.get("ad_archive_id"),
                 "advertiser_name": item.get("pageName") or item.get("page_name") or "Unknown Advertiser",
@@ -60,8 +85,8 @@ class MetaAdsScraper:
                 "date_started": item.get("startDateFormatted") or item.get("start_date"),
                 "date_ended": item.get("endDateFormatted") or item.get("end_date"),
                 "content_type": content_type,
-                "primary_text": item.get("body") or item.get("adText") or item.get("title"),
-                "headline": item.get("title") or item.get("headline"),
+                "primary_text": primary_text,
+                "headline": headline,
                 "cta_text": item.get("ctaText") or item.get("cta_text"),
                 "landing_url": item.get("linkUrl") or item.get("link_url"),
                 "platforms": item.get("publisherPlatform") or item.get("platforms") or ["Facebook", "Instagram"],

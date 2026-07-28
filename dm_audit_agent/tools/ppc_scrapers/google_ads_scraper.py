@@ -76,9 +76,13 @@ class GoogleAdsScraper:
                 item.get("videoUrls"), item.get("video_urls"), item.get("mediaUrl"),
                 item.get("media_url"), item.get("creativeUrl"),
             ]
+            variant_images = [
+                img for v in (item.get("variants") or []) for img in (v.get("images") or [])
+            ]
             possible_image_fields = [
                 item.get("imageUrl"), item.get("imageURL"), item.get("image"),
-                item.get("thumbnail"), item.get("thumbnailUrl"),
+                item.get("thumbnail"), item.get("thumbnailUrl"), item.get("previewUrl"),
+                (variant_images[0] if variant_images else None),
             ]
 
             for field in possible_video_fields:
@@ -113,19 +117,29 @@ class GoogleAdsScraper:
 
             advertiser_name = item.get("advertiserName") or item.get("advertiser") or "Unknown Advertiser"
 
-            # The actor's real ad copy lives in variants[].textContent, not a
-            # flat "headline"/"adText" field — reading only the flat fields
-            # (as the original ported code did) produced "(no text)" for
-            # every real ad. Pull the first non-empty variant text instead,
-            # falling back to the flat fields in case a future actor version
-            # adds them.
-            variant_texts = [
-                v.get("textContent") for v in (item.get("variants") or [])
-                if v.get("textContent")
-            ]
-            headline = item.get("headline") or (variant_texts[0] if variant_texts else None)
-            primary_text = item.get("primaryText") or item.get("adText") or item.get("description") or (
-                " / ".join(variant_texts) if variant_texts else None
+            # The actor's real ad copy lives in variants[].textContent (each
+            # variant can also carry its own headline/description fields
+            # depending on the ad's creative format), not a flat
+            # "headline"/"adText" field — reading only the flat fields (as
+            # the original ported code did) produced "(no text)" for every
+            # real ad. Pull the first non-empty variant field we can find,
+            # falling back through every flat field the actor might use.
+            variants = item.get("variants") or []
+            variant_texts = [v.get("textContent") for v in variants if v.get("textContent")]
+            variant_headlines = [v.get("headline") for v in variants if v.get("headline")]
+            variant_descriptions = [v.get("description") for v in variants if v.get("description")]
+
+            headline = (
+                item.get("headline")
+                or (variant_headlines[0] if variant_headlines else None)
+                or (variant_texts[0] if variant_texts else None)
+            )
+            primary_text = (
+                item.get("primaryText")
+                or item.get("adText")
+                or item.get("description")
+                or (" / ".join(variant_texts) if variant_texts else None)
+                or (variant_descriptions[0] if variant_descriptions else None)
             )
             landing_url = item.get("landingPage") or item.get("landingUrl")
 

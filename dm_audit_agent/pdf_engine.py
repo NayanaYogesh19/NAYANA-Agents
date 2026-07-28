@@ -407,14 +407,51 @@ class SlideCanvas:
               header_fill: Color = NAVY, zebra: bool = True) -> float:
         c = self.c
         n = len(headers)
-        widths = col_widths or [w / n] * n
+        if col_widths:
+            widths = col_widths
+        elif n > 1:
+            # First column (usually "Metric") gets a larger, fixed share;
+            # remaining value columns split the rest evenly — avoids the
+            # first label column being squeezed as narrow as value columns
+            # when there are many competitor columns.
+            first_w = min(w * 0.34, w / n * 1.7)
+            rest_w = (w - first_w) / (n - 1)
+            widths = [first_w] + [rest_w] * (n - 1)
+        else:
+            widths = [w]
+
+        # Shrink font size to fit the narrowest column's header/values so
+        # many-competitor tables (5-6 columns) never overlap adjacent cells.
+        font_size = 8.5
+        min_font_size = 6.0
+        max_cell_w = min(widths) - 8
+        widest_needed = max(
+            [stringWidth(h.upper(), FONT_BOLD, font_size) for h in headers]
+            + [stringWidth(str(cell), FONT_REGULAR, font_size) for row in rows for cell in row]
+            or [0]
+        )
+        while font_size > min_font_size and widest_needed > max_cell_w:
+            font_size -= 0.5
+            widest_needed = max(
+                [stringWidth(h.upper(), FONT_BOLD, font_size) for h in headers]
+                + [stringWidth(str(cell), FONT_REGULAR, font_size) for row in rows for cell in row]
+                or [0]
+            )
+
+        def _fit(text: str, font: str, size: float, avail_w: float) -> str:
+            if stringWidth(text, font, size) <= avail_w:
+                return text
+            while text and stringWidth(text + "…", font, size) > avail_w:
+                text = text[:-1]
+            return (text + "…") if text else ""
+
         c.setFillColor(header_fill)
         c.roundRect(x, y - row_h, w, row_h, 4, fill=1, stroke=0)
         c.setFillColor(WHITE)
-        c.setFont(FONT_BOLD, 8.5)
+        c.setFont(FONT_BOLD, font_size)
         cx = x + 10
         for i, hdr in enumerate(headers):
-            c.drawString(cx, y - row_h + 6, hdr.upper())
+            c.drawString(cx, y - row_h + 6, _fit(hdr.upper(), FONT_BOLD, font_size, widths[i] - 12))
             cx += widths[i]
         y -= row_h
 
@@ -423,11 +460,11 @@ class SlideCanvas:
                 c.setFillColor(HexColor("#F8FAFC"))
                 c.rect(x, y - row_h, w, row_h, fill=1, stroke=0)
             c.setFillColor(NAVY)
-            c.setFont(FONT_REGULAR, 8.5)
             cx = x + 10
             for i, cell in enumerate(row):
-                c.setFont(FONT_BOLD if i == 0 else FONT_REGULAR, 8.5)
-                c.drawString(cx, y - row_h + 6, str(cell)[:40])
+                cell_font = FONT_BOLD if i == 0 else FONT_REGULAR
+                c.setFont(cell_font, font_size)
+                c.drawString(cx, y - row_h + 6, _fit(str(cell), cell_font, font_size, widths[i] - 12))
                 cx += widths[i]
             c.setStrokeColor(BORDER)
             c.setLineWidth(0.4)

@@ -626,7 +626,12 @@ function formatAdSamples(label, totalAds, samples, capped) {
   if (samples && samples.length) {
     block += '\n' + samples
       .map((ad, i) => {
-        const lines = [`  ${i + 1}. ${ad.headline || ad.primary_text || '(no text)'} — ${ad.advertiser_name || ''}`.trimEnd()];
+        // Some real ads (pure image/video creatives) genuinely have no text
+        // variant — omit the headline portion entirely rather than showing
+        // a placeholder phrase like "(no text)".
+        const adText = ad.headline || ad.primary_text;
+        const prefix = `  ${i + 1}.` + (adText ? ` ${adText}` : '');
+        const lines = [`${prefix} — ${ad.advertiser_name || ''}`.trimEnd()];
         const details = [];
         if (ad.ad_library_id) details.push(`Library ID: ${ad.ad_library_id}`);
         if (ad.platforms && ad.platforms.length) details.push(`Platforms: ${ad.platforms.join(', ')}`);

@@ -390,7 +390,7 @@ def render_quad_grid(sc: SlideCanvas, title: str, subtitle: str, quads: list[tup
         card_w = content_w
         fit_sizes = [
             _auto_fit_body_size(card_w - 32, content_h - 22, heading, bullets, heading_size=11.5, icon=icon,
-                               min_size=7.0, max_size=11.0)
+                               min_size=7.5, max_size=13.5)
             for heading, bullets, icon in populated
         ]
         body_size = min(fit_sizes)
@@ -442,7 +442,7 @@ def render_quad_grid(sc: SlideCanvas, title: str, subtitle: str, quads: list[tup
 
     fit_sizes = [
         _auto_fit_body_size(card_w - 32, card_h - 22, heading, bullets, heading_size=11.5, icon=icon,
-                           min_size=7.0, max_size=11.0)
+                           min_size=7.5, max_size=13.5)
         for (heading, bullets, icon), (card_w, card_h) in zip(populated, card_dims)
     ]
     body_size = min(fit_sizes)
@@ -512,7 +512,7 @@ def render_visibility_gap(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
         heading, bullets, icon = populated[0]
         card_w = PAGE_W - 2 * MARGIN
         body_size = _auto_fit_body_size(card_w - 36, card_h - 26, heading, bullets, heading_size=12.5, icon=icon,
-                                        per_bullet_disclaimer=disclaimer, min_size=7.0, max_size=11.5)
+                                        per_bullet_disclaimer=disclaimer, min_size=7.5, max_size=13.5)
         gap_size = round(body_size * 1.24, 1)
         # Cap the card at its own estimated content need instead of always
         # filling the full slide height, so a short section doesn't render
@@ -530,7 +530,7 @@ def render_visibility_gap(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
         card_w = (PAGE_W - 2 * MARGIN - gap) / 2
         fit_sizes = [
             _auto_fit_body_size(card_w - 36, card_h - 26, heading, bullets, heading_size=12.5, icon=icon,
-                               per_bullet_disclaimer=disclaimer, min_size=7.0, max_size=11.5)
+                               per_bullet_disclaimer=disclaimer, min_size=7.5, max_size=13.5)
             for heading, bullets, icon in populated
         ]
         body_size = min(fit_sizes)
@@ -571,7 +571,7 @@ def render_best_practices(sc: SlideCanvas, ctx: dict[str, Any]) -> None:
     }
     fit_sizes = [
         _auto_fit_body_size(card_w - 36, card_h - 26, headings[cat], best_practices.get(cat), heading_size=heading_size,
-                           icon=CATEGORY_ICON.get(cat, "◆"), min_size=7.0, max_size=11.0)
+                           icon=CATEGORY_ICON.get(cat, "◆"), min_size=7.5, max_size=13.5)
         for cat in populated_categories
     ]
     body_size = min(fit_sizes)
